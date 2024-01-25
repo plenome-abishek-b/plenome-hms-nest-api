@@ -4,4 +4,6 @@ export class SetupInventoryItemCategory {
     is_active:string;
     description:string;
     created_at:Date;
+    hospital_item_category_id:number;
+    Hospital_id:number;
 }

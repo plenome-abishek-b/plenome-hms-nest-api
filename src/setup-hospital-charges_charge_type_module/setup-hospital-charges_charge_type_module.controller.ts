@@ -13,12 +13,16 @@ export class SetupHospitalChargesChargeTypeModuleController {
 
   @Get()
   findAll() {
+    console.log("1122112");
+    
     return this.setupHospitalChargesChargeTypeModuleService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.setupHospitalChargesChargeTypeModuleService.findOne(id);
+  @Get('/module/:dakalti')   
+  findOne(@Param('dakalti') dakalti: number) {
+    console.log("1122112");
+    
+    return this.setupHospitalChargesChargeTypeModuleService.findone(dakalti);
   }
 
   @Patch(':id')

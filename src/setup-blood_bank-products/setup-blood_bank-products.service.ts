@@ -1,13 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
-import { Connection } from 'typeorm';
+import { Connection, createConnection } from 'typeorm';
 import { SetupBloodBankProduct } from './entities/setup-blood_bank-product.entity';
+import { DynamicDatabaseService } from 'src/dynamic_db.service';
+import { MysqlConnectionOptions } from 'typeorm/driver/mysql/MysqlConnectionOptions';
 
 @Injectable()
 export class SetupBloodBankProductsService {
-  constructor(@InjectConnection() private connection: Connection) {}
+  constructor(@InjectConnection() private connection: Connection,
+  @Inject(forwardRef(() => DynamicDatabaseService)) private dynamicDbService: DynamicDatabaseService
+
+  ) {}
 
   async create(bloodproductsEntity: SetupBloodBankProduct ): Promise<{ [key: string]: any }[]> {
+   let dynamicConnection;
+   try {
     const result = await this.connection.query(
       'INSERT INTO blood_bank_products (name,is_blood_group) VALUES (?,?)',
       [bloodproductsEntity.name,
@@ -15,6 +22,27 @@ export class SetupBloodBankProductsService {
        
       ]
     );
+
+    
+    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+      process.env.ADMIN_IP,
+      process.env.ADMIN_DB_NAME,
+      process.env.ADMIN_DB_PASSWORD,
+      process.env.ADMIN_DB_USER_NAME
+      )
+      
+    const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+    const dynamicConnection = await createConnection(dynamicConnectionOptions);
+   
+    const AdminCategory = await dynamicConnection.query('INSERT INTO blood_bank_products (name,is_blood_group,Hospital_id,hospital_blood_bank_products_id) values (?,?,?,?)',[
+      bloodproductsEntity.name,
+      bloodproductsEntity.is_blood_group,
+      bloodproductsEntity.Hospital_id,
+      result.insertId
+    ])
+    console.log("entering if",AdminCategory);
+    await dynamicConnection.close();
    
     return  [{"data ":{"id  ":result.insertId,
               "status":"success",
@@ -22,7 +50,13 @@ export class SetupBloodBankProductsService {
               "inserted_data": await this.connection.query('SELECT * FROM blood_bank_products WHERE id = ?', [result.insertId])
               }}];
   }
-
+catch(error){
+  if(dynamicConnection){
+    await dynamicConnection.close();
+    return error
+  }
+  }
+}
   async findAll(): Promise<SetupBloodBankProduct[]> {
     const blood_bank_products = await this.connection.query('SELECT * FROM blood_bank_products where is_blood_group = ?',['1']);
     return blood_bank_products ;
@@ -39,7 +73,7 @@ export class SetupBloodBankProductsService {
   }
 
   async update(id: string, bloodproductsEntity: SetupBloodBankProduct): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       // console.log("hhhhhhhh",MedicineCategoryEntity.medicine_category);
       
@@ -53,6 +87,29 @@ export class SetupBloodBankProductsService {
       );
   console.log("kkkkkkkk");
   
+
+  const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+    process.env.ADMIN_IP,
+    process.env.ADMIN_DB_NAME,
+    process.env.ADMIN_DB_PASSWORD,
+    process.env.ADMIN_DB_USER_NAME
+    )
+    
+  const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
+
+  const repo = await dynamicConnection.query(
+    'update blood_bank_products SET  name =? ,is_blood_group =? where hospital_blood_bank_products_id = ? and Hospital_id= ?',
+
+    [
+      bloodproductsEntity.name,
+      bloodproductsEntity.is_blood_group,
+      id,
+      bloodproductsEntity.Hospital_id
+    ]
+  )
+
       return  [{"data ":{
       status:"success",
       "messege":"blood_bank_products details updated successfully ",

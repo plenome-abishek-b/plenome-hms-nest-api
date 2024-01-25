@@ -12,6 +12,8 @@ export class SetupSymptomsSymptomsTypeService {
   ){} 
 
   async create(symptoms_typeEntity: SetupSymptomsSymptomsType ) {
+   let dynamicConnection;
+   try {
     const result = await this.connection.query('INSERT INTO symptoms_classification (symptoms_type) VALUES (?)',
       [symptoms_typeEntity.symptoms_type
        
@@ -27,7 +29,7 @@ export class SetupSymptomsSymptomsTypeService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-    const dynamicConnection = await createConnection(dynamicConnectionOptions);
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query(`insert into symptoms_classification (symptoms_type,Hospital_id,hospital_symptoms_classification_id) values (?,?,?)`,[
       symptoms_typeEntity.symptoms_type,
@@ -42,6 +44,12 @@ export class SetupSymptomsSymptomsTypeService {
               "message":"symptoms_classification details added successfully inserted",
               "inserted_data": await this.connection.query('SELECT * FROM symptoms_classification WHERE id = ?', [result.insertId])
               }}];
+  } catch (error) {
+    if(dynamicConnection){
+      await dynamicConnection.close();
+      return error
+    }
+    }
   }
 
   async findAll(): Promise<SetupSymptomsSymptomsType[]> {
@@ -61,7 +69,7 @@ export class SetupSymptomsSymptomsTypeService {
 
 
   async update(id: string, symptoms_typeEntity: SetupSymptomsSymptomsType) : Promise<{ [key: string]: any }[]>{
-
+let dynamicConnection;
     try {
       
       
@@ -82,7 +90,7 @@ export class SetupSymptomsSymptomsTypeService {
         )
         
       const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-      const dynamicConnection = await createConnection(dynamicConnectionOptions);
+       dynamicConnection = await createConnection(dynamicConnectionOptions);
     
     const repo =  await dynamicConnection.query(
       'update symptoms_classification SET symptoms_type = ? where hospital_symptoms_classification_id = ? and Hospital_id= ?',
@@ -95,6 +103,7 @@ export class SetupSymptomsSymptomsTypeService {
     );
     
     console.log("12345");
+    
     
     
 

@@ -12,6 +12,8 @@ export class SetupPathologyUnitService {
   ){} 
   
   async create(unitEntity: SetupPathologyUnit ): Promise<{ [key: string]: any }[]> {
+    let dynamicConnection;
+    try{
     const result = await this.connection.query(
       'INSERT INTO unit (unit_name,unit_type) VALUES (?,?)',
       [unitEntity.unit_name,unitEntity.unit_type
@@ -29,7 +31,7 @@ export class SetupPathologyUnitService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-    const dynamicConnection = await createConnection(dynamicConnectionOptions);
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query('Insert into unit (unit_name,unit_type,Hospital_id,hospital_unit_id) Values (?,?,?,?)',[
       unitEntity.unit_name,
@@ -45,7 +47,13 @@ export class SetupPathologyUnitService {
               "messege":"unit details added successfully ",
               "inserted_data": await this.connection.query('SELECT * FROM unit WHERE id = ?', [result.insertId])
               }}];
+  }catch (error) {
+    if(dynamicConnection){
+      await dynamicConnection.close();
+      return error
+    }
   }
+}
 
 
 
@@ -60,6 +68,7 @@ export class SetupPathologyUnitService {
 
 
   async update(id: string, unitEntity: SetupPathologyUnit): Promise<{ [key: string]: any }[]> {
+    let dynamicConnection;
 
     try {
       // console.log("hhhhhhhh",MedicineCategoryEntity.medicine_category);
@@ -83,7 +92,7 @@ export class SetupPathologyUnitService {
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-  const dynamicConnection = await createConnection(dynamicConnectionOptions);
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
 
 
   const repo = await dynamicConnection.query(

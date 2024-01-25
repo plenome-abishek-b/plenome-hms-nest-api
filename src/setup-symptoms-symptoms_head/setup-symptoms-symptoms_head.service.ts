@@ -11,6 +11,8 @@ export class SetupSymptomsSymptomsHeadService {
   @Inject(forwardRef(() => DynamicDatabaseService)) private dynamicDbService: DynamicDatabaseService
   ){} 
   async create(symptoms_headEntity: SetupSymptomsSymptomsHead ) {
+ let dynamicConnection;
+ try{
     const result = await this.connection.query(
       'INSERT INTO symptoms (symptoms_title,description,type) VALUES (?,?,?)',
       [symptoms_headEntity.symptoms_title,
@@ -30,7 +32,7 @@ export class SetupSymptomsSymptomsHeadService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-    const dynamicConnection = await createConnection(dynamicConnectionOptions);
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query(`INSERT INTO symptoms (symptoms_title,description,type,Hospital_id,hospital_symptoms_id) VALUES (?,?,?,?,?)`,[
       symptoms_headEntity.symptoms_title,
@@ -48,6 +50,12 @@ export class SetupSymptomsSymptomsHeadService {
               "messege":"symptoms details added successfully ",
               "inserted_data": await this.connection.query('SELECT * FROM symptoms WHERE id = ?', [result.insertId])
               }}];
+  } catch (error) {
+    if(dynamicConnection){
+       await dynamicConnection.close();
+return error
+    }
+    }
   }
 
 
@@ -71,7 +79,7 @@ export class SetupSymptomsSymptomsHeadService {
 
 
   async update(id: string,symptoms_headEntity: SetupSymptomsSymptomsHead ): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       
       
@@ -95,12 +103,14 @@ export class SetupSymptomsSymptomsHeadService {
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-  const dynamicConnection = await createConnection(dynamicConnectionOptions);
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
 
 const repo =  await dynamicConnection.query(
-  'update symptoms SET symptoms_title = ? where hospital_symptoms_id = ? and Hospital_id= ?',
+  'update symptoms SET symptoms_title = ?,description =?, type =?  where hospital_symptoms_id = ? and Hospital_id= ?',
 
   [symptoms_headEntity.symptoms_title,
+    symptoms_headEntity.description,
+    symptoms_headEntity.type,
     id,
     symptoms_headEntity.Hospital_id
   ]

@@ -4,4 +4,6 @@ export class SetupInventoryItemStore {
     code:string;
     description:string;
     created_at:Date;
+    hospital_item_store_id:number;
+    Hospital_id:number;
 }

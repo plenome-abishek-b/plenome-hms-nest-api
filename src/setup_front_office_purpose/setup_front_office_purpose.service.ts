@@ -1,16 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
-import { Connection } from 'typeorm';
+import { Connection, createConnection } from 'typeorm';
 import { SetupFrontOfficePurpose } from './entities/setup_front_office_purpose.entity';
+import { DynamicDatabaseService } from 'src/dynamic_db.service';
+import { MysqlConnectionOptions } from 'typeorm/driver/mysql/MysqlConnectionOptions';
 @Injectable()
 export class SetupFrontOfficePurposeService {
-  constructor(@InjectConnection() private connection: Connection) {}
+  constructor(@InjectConnection() private connection: Connection,
+  @Inject(forwardRef(() => DynamicDatabaseService)) private dynamicDbService: DynamicDatabaseService
 
-  // create() {
-  //   return 'This action adds a new setupFrontOfficePurpose';
-  // }
+  ) {}
+
+
 
   async create(purposeEntity: SetupFrontOfficePurpose ): Promise<{ [key: string]: any }[]> {
+    let dynamicConnection;
+    try{
+    
     const result = await this.connection.query(
       'INSERT INTO visitors_purpose (visitors_purpose,description) VALUES (?,?)',
       [purposeEntity.visitors_purpose,
@@ -18,28 +24,50 @@ export class SetupFrontOfficePurposeService {
        
       ]
     );
+
+    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+      process.env.ADMIN_IP,
+      process.env.ADMIN_DB_NAME,
+      process.env.ADMIN_DB_PASSWORD,
+      process.env.ADMIN_DB_USER_NAME
+      )
+     
+    const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
+   
+    const AdminCategory = await dynamicConnection.query(`INSERT INTO visitors_purpose (visitors_purpose,description,Hospital_id,hospital_visitors_purpose_id) VALUES (?,?,?,?)`,[
+      purposeEntity.visitors_purpose,
+      purposeEntity.description,
+
+      purposeEntity.Hospital_id,
+      result.insertId
+    ])  
+    console.log("entering if",AdminCategory);
+              await dynamicConnection.close();
    
     return  [{"data ":{"id  ":result.insertId,
               "status":"success",
               "messege":"purpose details added successfully ",
               "inserted_data": await this.connection.query('SELECT * FROM visitors_purpose WHERE id = ?', [result.insertId])
               }}];
+  } catch (error){
+    if(dynamicConnection){
+      await dynamicConnection.close();
+      return error
+    }
+  }
   }
 
 
-  // findAll() {
-  //   return `This action returns all setupFrontOfficePurpose`;
-  // }
-
+ 
   async findAll(): Promise<SetupFrontOfficePurpose[]> {
     const purpose = await this.connection.query('SELECT * FROM visitors_purpose');
     return purpose ;
   }
 
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} setupFrontOfficePurpose`;
-  // }
+
 
   async findOne(id: string): Promise<SetupFrontOfficePurpose | null> {
     const purpose = await this.connection.query('SELECT * FROM visitors_purpose WHERE id = ?', [id]);
@@ -52,11 +80,9 @@ export class SetupFrontOfficePurposeService {
   }
 
 
-  // update(id: number,  ) {
-  //   return `This action updates a #${id} setupFrontOfficePurpose`;
-  // }
 
   async update(id: string, purposeEntity: SetupFrontOfficePurpose): Promise<{ [key: string]: any }[]> {
+    let dynamicConnection;
 
     try {
       
@@ -68,6 +94,29 @@ export class SetupFrontOfficePurposeService {
          id
         ]
       );
+
+      console.log("kkkkkkkk");
+
+      const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+    
+        process.env.ADMIN_IP,
+        process.env.ADMIN_DB_NAME,
+        process.env.ADMIN_DB_PASSWORD,
+        process.env.ADMIN_DB_USER_NAME
+        )
+        
+      const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+       dynamicConnection = await createConnection(dynamicConnectionOptions);
+
+      const repo = await dynamicConnection.query(
+        'update visitors_purpose SET visitors_purpose =?, description = ? where hospital_visitors_purpose_id = ?  and Hospital_id = ? ',
+        [
+          purposeEntity.visitors_purpose,
+          purposeEntity.description,
+          id,
+          purposeEntity.Hospital_id 
+        ]
+      )
   
       return  [{"data ":{
       status:"success",
@@ -84,9 +133,7 @@ export class SetupFrontOfficePurposeService {
     }
   }
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} setupFrontOfficePurpose`;
-  // }
+
 
   async remove(id: string): Promise<{ [key: string]: any }[]> {
     const result = await this.connection.query('DELETE FROM visitors_purpose WHERE id = ?', [id]);

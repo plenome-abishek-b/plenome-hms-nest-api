@@ -14,6 +14,8 @@ export class SetupReferralReferralCategoryService {
 
 
   async create(referral_categoryEntity: SetupReferralReferralCategory ): Promise<{ [key: string]: any }[]> {
+   let dynamicConnection;
+   try{
     const result = await this.connection.query( 'INSERT INTO referral_category (name,is_active) VALUES (?,?)',
       [referral_categoryEntity.name,
         referral_categoryEntity.is_active
@@ -31,7 +33,7 @@ export class SetupReferralReferralCategoryService {
         )
         
       const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-      const dynamicConnection = await createConnection(dynamicConnectionOptions);
+       dynamicConnection = await createConnection(dynamicConnectionOptions);
      
       const AdminCategory = await dynamicConnection.query(`INSERT INTO referral_category (name,is_active,Hospital_id,hospital_referral_category_id) VALUES (?,?,?,?)`,[
         referral_categoryEntity.name,
@@ -51,6 +53,12 @@ export class SetupReferralReferralCategoryService {
               "messege":"referral_category details added successfully inserted",
               "inserted_data": await this.connection.query('SELECT * FROM referral_category WHERE id = ?', [result.insertId])
               }}];
+  } catch (error) {
+    if(dynamicConnection){
+      await dynamicConnection.close();
+      return error
+    }
+    }
   }
 
 
@@ -74,7 +82,7 @@ export class SetupReferralReferralCategoryService {
 
 
   async update(id: string, referral_categoryEntity: SetupReferralReferralCategory): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       
       
@@ -95,7 +103,7 @@ export class SetupReferralReferralCategoryService {
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-  const dynamicConnection = await createConnection(dynamicConnectionOptions);
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
 
 
   const repo =  await dynamicConnection.query(

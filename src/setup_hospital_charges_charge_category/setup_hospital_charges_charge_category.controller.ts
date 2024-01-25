@@ -20,10 +20,6 @@ export class SetupHospitalChargesChargeCategoryController {
   findOne(@Param('id') id: string) {
     return this.setupHospitalChargesChargeCategoryService.findOne(id);
   }
-  @Get('/bytype/:id')
-  findOneByType(@Param('id') id: string) {
-    return this.setupHospitalChargesChargeCategoryService.findOneByType(id);
-  }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() charge_categoryEntity: SetupHospitalChargesChargeCategory) {

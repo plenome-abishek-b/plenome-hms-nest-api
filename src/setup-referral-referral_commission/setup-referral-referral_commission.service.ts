@@ -13,6 +13,8 @@ export class SetupReferralReferralCommissionService {
   ){} 
 
   async create(referral_commissionEntity: SetupReferralReferralCommission ){
+   let dynamicConnection;
+   try{
     const result = await this.connection.query('INSERT INTO referral_commission (referral_category_id,referral_type_id,commission,is_active) VALUES (?,?,?,?)',
       [referral_commissionEntity.referral_category_id,
         referral_commissionEntity.referral_type_id,
@@ -30,7 +32,7 @@ export class SetupReferralReferralCommissionService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-    const dynamicConnection = await createConnection(dynamicConnectionOptions);
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query(`INSERT INTO referral_commission (referral_category_id,referral_type_id,commission,is_active,Hospital_id,hospital_referral_commission_id) VALUES (?,?,?,?,?,?)`,[
       referral_commissionEntity.referral_category_id,
@@ -50,12 +52,18 @@ export class SetupReferralReferralCommissionService {
               "inserted_data": await this.connection.query('SELECT * FROM referral_commission WHERE id = ?', [result.insertId])
               }}];
   }
-
+ catch (error) {
+  if(dynamicConnection){
+    await dynamicConnection.close();
+    return error
+  }
+  }
+ }
 
 
 
   async findAll(): Promise<SetupReferralReferralCommission[]> {
-    const referral_commission = await this.connection.query(`select referral_category.name CATEGORY_NAME,referral_type.name TYPE_NAME,referral_commission.commission from referral_commission
+    const referral_commission = await this.connection.query(`select referral_commission.id, referral_category.name CATEGORY_NAME,referral_type.name TYPE_NAME,referral_commission.commission from referral_commission
     left join referral_category ON referral_commission.referral_category_id = referral_category.id
     left join referral_type ON referral_commission.referral_type_id = referral_type.id;`);
     return referral_commission ;
@@ -65,7 +73,7 @@ export class SetupReferralReferralCommissionService {
  
 
   async update(id: string, referral_commissionEntity: SetupReferralReferralCommission ): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       
       
@@ -87,7 +95,7 @@ export class SetupReferralReferralCommissionService {
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-  const dynamicConnection = await createConnection(dynamicConnectionOptions);
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
 
 const repo =  await dynamicConnection.query(
   'update referral_commission SET referral_type_id = ?, commission = ? where hospital_referral_commission_id = ? and Hospital_id= ?',

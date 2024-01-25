@@ -1,14 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
-import { Connection } from 'typeorm';
+import { Connection, createConnection } from 'typeorm';
 import { SetupHumanResourceSpecialist } from './entities/setup-human_resource-specialist.entity';
+import { DynamicDatabaseService } from 'src/dynamic_db.service';
+import { MysqlConnectionOptions } from 'typeorm/driver/mysql/MysqlConnectionOptions';
 
 @Injectable()
 export class SetupHumanResourceSpecialistService {
   
-  constructor(@InjectConnection() private connection: Connection) {}
+  constructor(@InjectConnection() private connection: Connection,
+  @Inject(forwardRef(() => DynamicDatabaseService)) private dynamicDbService: DynamicDatabaseService
+  ){} 
   
-  async create(specialsitEntity: SetupHumanResourceSpecialist ): Promise<{ [key: string]: any }[]> {
+  async create(specialsitEntity: SetupHumanResourceSpecialist ) {
+    let dynamicConnection
+    try{
     const result = await this.connection.query(
       'INSERT INTO specialist (specialist_name,is_active) VALUES (?,?)',
       [specialsitEntity.specialist_name,
@@ -16,12 +22,39 @@ export class SetupHumanResourceSpecialistService {
        
       ]
     );
+
+    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+      process.env.ADMIN_IP,
+      process.env.ADMIN_DB_NAME,
+      process.env.ADMIN_DB_PASSWORD,
+      process.env.ADMIN_DB_USER_NAME
+      )
+      
+    const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
    
+    const AdminCategory = await dynamicConnection.query(`INSERT INTO specialist (specialist_name,is_active,Hospital_id,hospital_specialist_id) VALUES (?,?,?,?)`,[
+      specialsitEntity.specialist_name,
+      specialsitEntity.is_active,
+      specialsitEntity.Hospital_id,
+      result.insertId
+    ]  )
+
+    console.log("sssss",AdminCategory);
+    await dynamicConnection.close();
+    
     return  [{"data ":{"id  ":result.insertId,
               "status":"success",
               "messege":"specialist details added successfully ",
               "inserted_data": await this.connection.query('SELECT * FROM specialist WHERE id = ?', [result.insertId])
               }}];
+  } catch (error) {
+    if(dynamicConnection){
+      await dynamicConnection.close();
+      return error
+    }
+    }
   }
 
 
@@ -45,7 +78,7 @@ export class SetupHumanResourceSpecialistService {
 
 
   async update(id: string, specialsitEntity: SetupHumanResourceSpecialist ): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       
       
@@ -56,6 +89,28 @@ export class SetupHumanResourceSpecialistService {
         ]
       );
   console.log("kkkkkkkk");
+
+  
+  const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+    process.env.ADMIN_IP,
+    process.env.ADMIN_DB_NAME,
+    process.env.ADMIN_DB_PASSWORD,
+    process.env.ADMIN_DB_USER_NAME
+    )
+    
+  const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
+
+  const repo = await dynamicConnection.query(
+    'update specialist SET specialist_name =? where hospital_specialist_id = ? and Hospital_id =?',
+    [
+      specialsitEntity.specialist_name,
+      id,
+      specialsitEntity.Hospital_id
+    ]
+  )
+  console.log("aaaaa")
   
       return  [{"data ":{
       status:"success",

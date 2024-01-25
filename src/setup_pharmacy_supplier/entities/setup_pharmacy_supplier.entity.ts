@@ -7,4 +7,6 @@ export class SetupPharmacySupplier {
     supplier_drug_licence:string;
     address:string;
     created_at:Date;
+    hospital_medicine_supplier_id:string;
+    Hospital_id:string;
 }

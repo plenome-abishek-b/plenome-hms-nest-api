@@ -1,22 +1,59 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
-import { Connection } from 'typeorm';
+import { Connection, createConnection } from 'typeorm';
 import { SetupOperationOperation } from './entities/setup-operation-operation.entity';
+import { DynamicDatabaseService } from 'src/dynamic_db.service';
+import { MysqlConnectionOptions } from 'typeorm/driver/mysql/MysqlConnectionOptions';
 
 
 @Injectable()
 export class SetupOperationOperationService {
-  constructor(@InjectConnection() private connection: Connection) {}
+  constructor(@InjectConnection() private connection: Connection,
+  @Inject(forwardRef(() => DynamicDatabaseService)) private dynamicDbService: DynamicDatabaseService
+  ){} 
 
 
-  async create(operationEntity: SetupOperationOperation ): Promise<{ [key: string]: any }[]> {
+  async create(operationEntity: SetupOperationOperation ){
+   let dynamicConnection;
+   try {
     const result = await this.connection.query(
-      'INSERT INTO operation (operation,category_id,) VALUES (?,?)',
+      'INSERT INTO operation (operation,category_id,is_active) VALUES (?,?,?)',
       [operationEntity.operation,
-        operationEntity.category_id
-       
+        operationEntity.category_id,
+        operationEntity.is_active       
       ]
     );
+
+    
+    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+      process.env.ADMIN_IP,
+      process.env.ADMIN_DB_NAME,
+      process.env.ADMIN_DB_PASSWORD,
+      process.env.ADMIN_DB_USER_NAME
+      )
+      
+    const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
+   
+console.log("hiii bro");
+
+  const AdminCategory = await dynamicConnection.query(`Insert into operation 
+  ( 
+    operation,
+    category_id,
+    is_active,
+    hospital_operation_id,
+    Hospital_id) values (?,?,?,?,?)`,[
+    operationEntity.operation,
+    operationEntity.category_id,
+    operationEntity.is_active,
+    result.insertId,
+    operationEntity.Hospital_id
+
+  ])
+  console.log("entering if",AdminCategory);
+  await dynamicConnection.close();
    
     return  [{"data ":{"id  ":result.insertId,
               "status":"success",
@@ -25,15 +62,23 @@ export class SetupOperationOperationService {
               }}];
 
             
+  } catch (error) {
+    if(dynamicConnection){
+      await dynamicConnection.close()
+      return error;
+    }
+    }
   }
 
   async findAll(): Promise<SetupOperationOperation[]> {
-    const operation = await this.connection.query('SELECT * FROM operation');
+    const operation = await this.connection.query(`select operation.id,operation.operation,operation_category.category,operation_category.is_active from operation
+    join operation_category ON operation.category_id = operation_category.id`);
     return operation;
   }
 
   async findOne(id: string): Promise<SetupOperationOperation | null> {
-    const operation = await this.connection.query('SELECT * FROM operation WHERE id = ?', [id]);
+    const operation = await this.connection.query(`select operation.id,operation.operation,operation_category.category,operation_category.is_active from operation
+    join operation_category ON operation.category_id = operation_category.id WHERE operation.id = ?`, [id]);
     
     if (operation.length === 1) {
       return operation ;
@@ -44,7 +89,7 @@ export class SetupOperationOperationService {
 
   
   async update(id: string, operationEntity: SetupOperationOperation ): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       
       
@@ -57,6 +102,28 @@ export class SetupOperationOperationService {
       );
   console.log("kkkkkkkk");
   
+
+  const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+    process.env.ADMIN_IP,
+    process.env.ADMIN_DB_NAME,
+    process.env.ADMIN_DB_PASSWORD,
+    process.env.ADMIN_DB_USER_NAME
+    )
+    
+  const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
+
+const repo = await dynamicConnection.query(
+  'update operation SET operation =?,category_id =? where hospital_operation_id = ? and Hospital_id = ?',
+  [
+    operationEntity.operation,
+    operationEntity.category_id,
+    id,
+    operationEntity.Hospital_id
+  ]
+);
+
       return  [{"data ":{
       status:"success",
       "messege":"operation details updated successfully inserted",

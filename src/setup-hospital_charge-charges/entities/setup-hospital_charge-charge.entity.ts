@@ -9,4 +9,6 @@ export class SetupHospitalChargeCharge {
     description:string;
     status:string;
     created_at:Date;
+    hospital_charges_id:number;
+    Hospital_id:number;
 }

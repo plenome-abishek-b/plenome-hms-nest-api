@@ -13,6 +13,8 @@ export class SetupPharmacyDoseIntervalService {
 
 
   async create(dose_intervalEntity: SetupPharmacyDoseInterval ): Promise<{ [key: string]: any }[]> {
+   let dynamicConnection;
+   try{
     const result = await this.connection.query(
       'INSERT INTO dose_interval (name) VALUES (?)',
       [dose_intervalEntity.name
@@ -30,7 +32,7 @@ export class SetupPharmacyDoseIntervalService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-    const dynamicConnection = await createConnection(dynamicConnectionOptions);
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query(`INSERT INTO dose_interval (name,Hospital_id,hospital_dose_interval_id) VALUES (?,?,?)`,[
       dose_intervalEntity.name,
@@ -47,7 +49,13 @@ export class SetupPharmacyDoseIntervalService {
               "messege":"dose_interval details added successfully ",
               "inserted_data": await this.connection.query('SELECT * FROM dose_interval WHERE id = ?', [result.insertId])
               }}];
+  } catch (error) {
+    if(dynamicConnection){
+      await dynamicConnection.close();
+      return error;
+    }
   }
+}
 
 
 
@@ -58,9 +66,7 @@ export class SetupPharmacyDoseIntervalService {
   }
 
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} setupPharmacyDoseInterval`;
-  // }
+  
 
 
   async findOne(id: string): Promise<SetupPharmacyDoseInterval | null> {
@@ -74,12 +80,10 @@ export class SetupPharmacyDoseIntervalService {
   }
 
 
-  // update(id: number, ) {
-  //   return `This action updates a #${id} setupPharmacyDoseInterval`;
-  // }
+  
 
   async update(id: string, dose_intervalEntity: SetupPharmacyDoseInterval): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       
       
@@ -100,7 +104,7 @@ export class SetupPharmacyDoseIntervalService {
         )
         
       const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-      const dynamicConnection = await createConnection(dynamicConnectionOptions);
+       dynamicConnection = await createConnection(dynamicConnectionOptions);
     
     const repo =  await dynamicConnection.query(
       'update dose_interval SET name = ? where hospital_dose_interval_id = ? and Hospital_id= ?',
@@ -134,9 +138,7 @@ export class SetupPharmacyDoseIntervalService {
   }
 
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} setupPharmacyDoseInterval`;
-  // }
+ 
 
   async remove(id: string): Promise<{ [key: string]: any }[]> {
     const result = await this.connection.query('DELETE FROM dose_interval WHERE id = ?', [id]);

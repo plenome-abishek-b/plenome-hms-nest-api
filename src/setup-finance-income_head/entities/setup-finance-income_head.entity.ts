@@ -5,4 +5,6 @@ export class SetupFinanceIncomeHead {
     is_active:string;
     is_deleted:string;
     created_at:Date;
+    hospital_income_head_id:number;
+    Hospital_id:number;
 }

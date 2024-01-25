@@ -60,22 +60,29 @@ import { InternalAppointmentStaffModule } from './internal-appointment-staff/int
 import { InternalAppointmentChargesModule } from './internal-appointment-charges/internal-appointment-charges.module';
 import { InternalAppointmentShiftModule } from './internal-appointment-shift/internal-appointment-shift.module';
 import { InternalAppointmentSlotModule } from './internal-appointment-slot/internal-appointment-slot.module';
+import { InternalAppointmentPriorityModule } from './internal-appointment-priority/internal-appointment-priority.module';
+import { OpdOutPatientModule } from './opd-out_patient/opd-out_patient.module';
+import { InternalOpdOverviewModule } from './internal-opd-overview/internal-opd-overview.module';
+import { InternalOpdOverviewConsultantDoctorModule } from './internal-opd-overview-consultant_doctor/internal-opd-overview-consultant_doctor.module';
+import { InternalOpdOverviewVisitsModule } from './internal-opd-overview-visits/internal-opd-overview-visits.module';
+import { InternalOpdTimelineModule } from './internal-opd-timeline/internal-opd-timeline.module';
+import { InternalOpdChargesModule } from './internal-opd-charges/internal-opd-charges.module';
+import { SettingsRolesPermissionsModule } from './settings_roles-permissions/settings_roles-permissions.module';
+import { SettingsNotificationSettingModule } from './settings_notification_setting/settings_notification_setting.module';
+import { SettingsSystemNotificationSettingModule } from './settings-system_notification_setting/settings-system_notification_setting.module';
+import { SettingPrefixSettingModule } from './setting-prefix_setting/setting-prefix_setting.module';
+import { SettingLanguagesModule } from './setting-languages/setting-languages.module';
+import { SettingsUsersPatientsModule } from './settings-users_patients/settings-users_patients.module';
+import { SettingsUsersStaffsModule } from './settings-users-staffs/settings-users-staffs.module';
+import { ModulesPatientModule } from './modules_patient/modules_patient.module';
+import { SettingsModulesPatientModule } from './settings-modules_patient/settings-modules_patient.module';
+import { SettingsGeneralSettingModule } from './settings-general_setting/settings-general_setting.module';
+import { SettingsCaptchaSettingsModule } from './settings-captcha_settings/settings-captcha_settings.module';
+import { SettingsFrontCmsSettingModule } from './settings-front_cms_setting/settings-front_cms_setting.module';
+import { AddAppointmentDoctorWiseModule } from './add-appointment-doctor_wise/add-appointment-doctor_wise.module';
+import { AddAppointmentPatientQueueModule } from './add-appointment-patient_queue/add-appointment-patient_queue.module';
 
-// @Module({
-//   imports: [
-//     ConfigModule.forRoot(),
 
-//     TypeOrmModule.forRoot({
-//       "type": "mysql",
-//       "host": "localhost",
-//       "port": 3306,
-//       "username": "root",
-//       "password": "Anbu***24",
-//       "database": "overall_database",
-//       "entities": ["dist/**/*.entity{.ts,.js}"],
-//       "synchronize": false
-//   }),
-  // ]})
 
 @Module({
   imports: [
@@ -203,6 +210,27 @@ import { InternalAppointmentSlotModule } from './internal-appointment-slot/inter
     InternalAppointmentChargesModule,
     InternalAppointmentShiftModule,
     InternalAppointmentSlotModule,
+    InternalAppointmentPriorityModule,
+    OpdOutPatientModule,
+    InternalOpdOverviewModule,
+    InternalOpdOverviewConsultantDoctorModule,
+    InternalOpdOverviewVisitsModule,
+    InternalOpdTimelineModule,
+    InternalOpdChargesModule,
+    SettingsRolesPermissionsModule,
+    SettingsNotificationSettingModule,
+    SettingsSystemNotificationSettingModule,
+    SettingPrefixSettingModule,
+    SettingLanguagesModule,
+    SettingsUsersPatientsModule,
+    SettingsUsersStaffsModule,
+    ModulesPatientModule,
+    SettingsModulesPatientModule,
+    SettingsGeneralSettingModule,
+    SettingsCaptchaSettingsModule,
+    SettingsFrontCmsSettingModule,
+    AddAppointmentDoctorWiseModule,
+    AddAppointmentPatientQueueModule,
   ],
   controllers: [AppController],
   providers: [AppService],

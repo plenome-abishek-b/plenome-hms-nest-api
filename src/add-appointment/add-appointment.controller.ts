@@ -21,10 +21,10 @@ export class AddAppointmentController {
     return this.addAppointmentService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() add_appointment:AddAppointment) {
-    return this.addAppointmentService.update(id, add_appointment);
-  }
+  // @Patch(':id')
+  // update(@Param('id') id: string, @Body() add_appointment:AddAppointment) {
+  //   return this.addAppointmentService.update(id, add_appointment);
+  // }
 
   @Delete(':id')
   remove(@Param('id') id: string) {

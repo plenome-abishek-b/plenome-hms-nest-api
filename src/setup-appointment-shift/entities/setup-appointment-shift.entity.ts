@@ -4,4 +4,6 @@ export class SetupAppointmentShift {
     start_time:TimeRanges;
     end_time:TimeRanges;
     date_created:Date;
+    hospital_global_shift_id:number;
+    Hospital_id:number;
 }

@@ -15,33 +15,43 @@ export class FindingsCategoryService {
 
         
   async create(findings_categoryEntity: FindingsCategory) {
-    const result = await this.connection.query( 'INSERT INTO finding_category (category) VALUES (?)',
-      [findings_categoryEntity.category]   );
-
-      const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
-
-      process.env.ADMIN_IP,
-      process.env.ADMIN_DB_NAME,
-      process.env.ADMIN_DB_PASSWORD,
-      process.env.ADMIN_DB_USER_NAME
-      )
+    let dynamicConnection
+    try {
       
-    const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-    const dynamicConnection = await createConnection(dynamicConnectionOptions);
-   
-    const AdminCategory = await dynamicConnection.query(`INSERT INTO finding_category (category,Hospital_id,hospital_finding_category_id) VALUES (?,?,?)`,[
-      findings_categoryEntity.category,
-      findings_categoryEntity.Hospital_id,
-      result.insertId
-    ]) 
-    console.log("entering if",AdminCategory);
-              await dynamicConnection.close();
+    const result = await this.connection.query( 'INSERT INTO finding_category (category) VALUES (?)',
+    [findings_categoryEntity.category]   );
 
-              return  [{"data ":{"id  ":result.insertId,
-              "status":"success",
-              "messege":"finding_category details added successfully inserted",
-              "inserted_data": await this.connection.query('SELECT * FROM finding_category WHERE id = ?', [result.insertId])
-              }}];  
+    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+    process.env.ADMIN_IP,
+    process.env.ADMIN_DB_NAME,
+    process.env.ADMIN_DB_PASSWORD,
+    process.env.ADMIN_DB_USER_NAME
+    )
+    
+  const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
+ 
+  const AdminCategory = await dynamicConnection.query(`INSERT INTO finding_category (category,Hospital_id,hospital_finding_category_id) VALUES (?,?,?)`,[
+    findings_categoryEntity.category,
+    findings_categoryEntity.Hospital_id,
+    result.insertId
+  ])  
+  console.log("entering if",AdminCategory);
+            await dynamicConnection.close();
+
+            return  [{"data ":{"id  ":result.insertId,
+            "status":"success",
+            "messege":"finding_category details added successfully inserted",
+            "inserted_data": await this.connection.query('SELECT * FROM finding_category WHERE id = ?', [result.insertId])
+            }}];  
+
+    } catch (error) {
+      if(dynamicConnection){
+        await dynamicConnection.close();
+        return error
+      }
+    }
   }
 
 
@@ -64,7 +74,7 @@ export class FindingsCategoryService {
 
 
   async update(id: string, findings_categoryEntity: FindingsCategory): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       
       
@@ -85,7 +95,7 @@ export class FindingsCategoryService {
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-  const dynamicConnection = await createConnection(dynamicConnectionOptions);
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
 
 const repo =  await dynamicConnection.query(
   'update finding_category SET category = ? where hospital_finding_category_id = ? and Hospital_id= ?',

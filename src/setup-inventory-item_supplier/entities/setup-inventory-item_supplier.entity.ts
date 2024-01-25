@@ -9,5 +9,7 @@ export class SetupInventoryItemSupplier {
     contact_person_email:string;
     description:Text;
     created_at:Date;
+    hospital_item_supplier_id:number;
+    Hospital_id:number;
 
 }

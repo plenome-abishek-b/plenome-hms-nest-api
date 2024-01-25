@@ -1,19 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
-import { Connection } from 'typeorm';
+import { Connection, createConnection } from 'typeorm';
 import { SetupFrontOfficeComplainType } from './entities/setup_front_office_complain_type.entity';
+import { DynamicDatabaseService } from 'src/dynamic_db.service';
+import { MysqlConnectionOptions } from 'typeorm/driver/mysql/MysqlConnectionOptions';
 
 
 @Injectable()
 export class SetupFrontOfficeComplainTypeService {
 
-  constructor(@InjectConnection() private connection: Connection) {}
+  constructor(@InjectConnection() private connection: Connection,
+  @Inject(forwardRef(() => DynamicDatabaseService)) private dynamicDbService: DynamicDatabaseService
 
-  // create(createSetupFrontOfficeComplainTypeDto: CreateSetupFrontOfficeComplainTypeDto) {
-  //   return 'This action adds a new setupFrontOfficeComplainType';
-  // }
+  ) {}
+
+ 
 
   async create(complain_typeEntity: SetupFrontOfficeComplainType ): Promise<{ [key: string]: any }[]> {
+    let dynamicConnection
+    try{
     const result = await this.connection.query(
       'INSERT INTO complaint_type (complaint_type,description) VALUES (?,?)',
       [complain_typeEntity.complaint_type,
@@ -21,26 +26,46 @@ export class SetupFrontOfficeComplainTypeService {
        
       ]
     );
+    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+      process.env.ADMIN_IP,
+      process.env.ADMIN_DB_NAME,
+      process.env.ADMIN_DB_PASSWORD,
+      process.env.ADMIN_DB_USER_NAME
+      )
+      
+    const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+    const dynamicConnection = await createConnection(dynamicConnectionOptions);
    
+    const AdminCategory = await dynamicConnection.query('INSERT INTO complaint_type (complaint_type,description,Hospital_id,hospital_complaint_type_id) VALUES (?,?,?,?)',[
+      complain_typeEntity.complaint_type,
+      complain_typeEntity.description,
+      complain_typeEntity.Hospital_id,
+      result.insertId
+    ])
+   
+    console.log("entering if",AdminCategory);
+    await dynamicConnection.close();
+
     return  [{"data ":{"id  ":result.insertId,
               "status":"success",
               "messege":"complaint_type details added successfully inserted",
               "inserted_data": await this.connection.query('SELECT * FROM complaint_type WHERE id = ?', [result.insertId])
               }}];
-  }
+  } catch (error) {
+    if(dynamicConnection){
+      await dynamicConnection.close();
+      return error
+    }
+  }}
 
-  // findAll() {
-  //   return `This action returns all setupFrontOfficeComplainType`;
-  // }
 
   async findAll(): Promise<SetupFrontOfficeComplainType[]> {
     const complaint_type = await this.connection.query('SELECT * FROM complaint_type');
     return complaint_type ;
   }
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} setupFrontOfficeComplainType`;
-  // }
+
 
   async findOne(id: string): Promise<SetupFrontOfficeComplainType | null> {
     const complaint_type = await this.connection.query('SELECT * FROM complaint_type WHERE id = ?', [id]);
@@ -52,12 +77,9 @@ export class SetupFrontOfficeComplainTypeService {
     // }
   }
 
-  // update(id: number, updateSetupFrontOfficeComplainTypeDto: UpdateSetupFrontOfficeComplainTypeDto) {
-  //   return `This action updates a #${id} setupFrontOfficeComplainType`;
-  // }
-
+ 
   async update(id: string, complain_typeEntity: SetupFrontOfficeComplainType): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       // console.log("hhhhhhhh",MedicineCategoryEntity.medicine_category);
       
@@ -70,6 +92,31 @@ export class SetupFrontOfficeComplainTypeService {
         ]
       );
   
+      console.log("kkkkkkkk");
+
+      const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+    
+        process.env.ADMIN_IP,
+        process.env.ADMIN_DB_NAME,
+        process.env.ADMIN_DB_PASSWORD,
+        process.env.ADMIN_DB_USER_NAME
+        )
+        
+      const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+       dynamicConnection = await createConnection(dynamicConnectionOptions);
+
+      const repo = await dynamicConnection.query(
+        'update complaint_type SET complaint_type =?, description = ? where hospital_complaint_type_id = ? and Hospital_id = ? ',
+        [
+          complain_typeEntity.complaint_type,
+          complain_typeEntity.description,
+          id,
+          complain_typeEntity.Hospital_id
+        ]
+      );
+
+      console.log("111");
+
       return  [{"data ":{
       status:"success",
       "messege":"complaint_type details updated successfully inserted",

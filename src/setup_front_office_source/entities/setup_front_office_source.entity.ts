@@ -3,4 +3,6 @@ export class SetupFrontOfficeSource {
     source:string;
     description:string;
     created_at:Date;
+    hospital_source_id:number;
+    Hospital_id:number;
 }

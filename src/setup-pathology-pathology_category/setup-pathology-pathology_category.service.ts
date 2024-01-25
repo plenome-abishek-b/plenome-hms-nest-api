@@ -11,6 +11,8 @@ export class SetupPathologyPathologyCategoryService {
   @Inject(forwardRef(() => DynamicDatabaseService)) private dynamicDbService: DynamicDatabaseService
   ){} 
   async create(pathology_categoryEntity: SetupPathologyPathologyCategory ): Promise<{ [key: string]: any }[]> {
+   let dynamicConnection;
+   try{
     const result = await this.connection.query(
       'INSERT INTO pathology_category (category_name) VALUES (?)',
       [pathology_categoryEntity.category_name
@@ -27,7 +29,7 @@ export class SetupPathologyPathologyCategoryService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-    const dynamicConnection = await createConnection(dynamicConnectionOptions);
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query(`INSERT INTO pathology_category (category_name,Hospital_id,hospital_pathology_category_id) VALUES (?,?,?)`,[
       pathology_categoryEntity.category_name,
@@ -42,6 +44,12 @@ export class SetupPathologyPathologyCategoryService {
               "messege":"pathology_category details added successfully ",
               "inserted_data": await this.connection.query('SELECT * FROM pathology_category WHERE id = ?', [result.insertId])
               }}];
+  } catch(error){
+    if(dynamicConnection){
+      await dynamicConnection.close();
+      return error
+    }
+    }
   }
 
   async findAll(): Promise<SetupPathologyPathologyCategory[]> {
@@ -61,7 +69,7 @@ export class SetupPathologyPathologyCategoryService {
   }
 
   async update(id: string, pathology_categoryEntity: SetupPathologyPathologyCategory): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       // console.log("hhhhhhhh",MedicineCategoryEntity.medicine_category);
       
@@ -84,7 +92,7 @@ export class SetupPathologyPathologyCategoryService {
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-  const dynamicConnection = await createConnection(dynamicConnectionOptions);
+  dynamicConnection = await createConnection(dynamicConnectionOptions);
 
   const repo = await dynamicConnection.query(
     'update pathology_category SET category_name = ? where hospital_pathology_category_id =? and Hospital_id= ?',

@@ -1,18 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
-import { Connection } from 'typeorm';
+import { Connection, createConnection } from 'typeorm';
 import { SetupHospitalChargesChargeCategory } from './entities/setup_hospital_charges_charge_category.entity';
+import { DynamicDatabaseService } from 'src/dynamic_db.service';
+import { MysqlConnectionOptions } from 'typeorm/driver/mysql/MysqlConnectionOptions';
 
 
 @Injectable()
 export class SetupHospitalChargesChargeCategoryService {
   
-  constructor(@InjectConnection() private connection: Connection) {}
+  constructor(@InjectConnection() private connection: Connection,
+  @Inject(forwardRef(() => DynamicDatabaseService)) private dynamicDbService: DynamicDatabaseService
+
+  ) {}
 
 
 
   async create(charge_categoryEntity: SetupHospitalChargesChargeCategory): Promise<{[key: string]: any}[]>{
-  const result = await this.connection.query(
+ let dynamicConnection;
+ try{
+ 
+    const result = await this.connection.query(
   'INSERT INTO charge_categories (charge_type_id,name,description,short_code,is_default) VALUES (?,?,?,?,?)',
  [charge_categoryEntity.charge_type_id,
   charge_categoryEntity.name,
@@ -23,11 +31,40 @@ export class SetupHospitalChargesChargeCategoryService {
 ]
   );
 
+  const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+    process.env.ADMIN_IP,
+    process.env.ADMIN_DB_NAME,
+    process.env.ADMIN_DB_PASSWORD,
+    process.env.ADMIN_DB_USER_NAME
+    )
+    
+  const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
+ 
+  const AdminCategory = await dynamicConnection.query(`INSERT INTO charge_categories (charge_type_id,name,description,short_code,is_default,Hospital_id,hospital_charge_categories_id) values (?,?,?,?,?,?,?)`,[
+    charge_categoryEntity.charge_type_id,
+    charge_categoryEntity.name,
+    charge_categoryEntity.description,
+    charge_categoryEntity.short_code,
+    charge_categoryEntity.is_default,
+    charge_categoryEntity.Hospital_id,
+    result.insertId
+  ])
+  console.log("entering if",AdminCategory);
+  await dynamicConnection.close();
+
   return [{"data":{"id ":result.insertId,
   "status":"success",
   "messege":"charge_category details added successfully inserted",
   "inserted_data": await this.connection.query('SELECT * FROM charge_categories WHERE id = ?', [result.insertId])
   }}];
+} catch (error) {
+  if(dynamicConnection){
+    await dynamicConnection.close();
+    return error
+  }
+}
 }
 
 
@@ -46,14 +83,10 @@ async findOne(id: string): Promise<SetupHospitalChargesChargeCategory[]> {
  
 }
 
-async findOneByType(id: string): Promise<SetupHospitalChargesChargeCategory[]> {
-  const charge_category = await this.connection.query('SELECT * FROM charge_categories WHERE charge_type_id = ?', [id]);
-  
-    return charge_category ;
- 
-}
+
 
 async update(id: string, charge_categoryEntity: SetupHospitalChargesChargeCategory): Promise<{ [key: string]: any }[]> {
+  let dynamicConnection;
 
   try {
     console.log("dddd");
@@ -65,6 +98,31 @@ async update(id: string, charge_categoryEntity: SetupHospitalChargesChargeCatego
         id
       ]
     );
+
+  
+  console.log("kkkkkkkk");
+
+  const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+    process.env.ADMIN_IP,
+    process.env.ADMIN_DB_NAME,
+    process.env.ADMIN_DB_PASSWORD,
+    process.env.ADMIN_DB_USER_NAME
+    )
+    
+  const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
+
+const repo = await dynamicConnection.query(
+'update charge_categories SET  charge_type_id =?,name =?,description =? where hospital_charge_categories_id = ? and Hospital_id = ?',[
+  charge_categoryEntity.charge_type_id,
+  charge_categoryEntity.name,
+  charge_categoryEntity.description,
+  id,
+  charge_categoryEntity.Hospital_id
+]);
+
+console.log("12345");
 
     return  [{"data ":{
     status:"success",

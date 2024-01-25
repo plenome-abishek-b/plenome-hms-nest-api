@@ -5,4 +5,6 @@ export class SetupBedBed {
     bed_group_id:number;
     is_active:string;
     created_at:Date;
+    hospital_bed_id:number;
+    Hospital_id:number;
 }

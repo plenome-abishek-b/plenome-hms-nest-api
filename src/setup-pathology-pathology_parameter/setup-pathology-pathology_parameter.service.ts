@@ -11,6 +11,8 @@ export class SetupPathologyPathologyParameterService {
   ){} 
 
   async create(pathology_parameterEntity: SetupPathologyPathologyParameter ): Promise<{ [key: string]: any }[]> {
+    let dynamicConnection;
+    try{
     const result = await this.connection.query(
       'INSERT INTO pathology_parameter (parameter_name,test_value,reference_range,gender,unit,description) VALUES (?,?,?,?,?,?)',
       [pathology_parameterEntity.parameter_name,
@@ -33,7 +35,7 @@ export class SetupPathologyPathologyParameterService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-    const dynamicConnection = await createConnection(dynamicConnectionOptions);
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query('Insert into pathology_parameter (parameter_name,test_value,reference_range,gender,unit,description,Hospital_id,hospital_pathology_parameter_id) VALUES (?,?,?,?,?,?,?,?)',[
       pathology_parameterEntity.parameter_name,
@@ -55,16 +57,25 @@ export class SetupPathologyPathologyParameterService {
               "inserted_data": await this.connection.query('SELECT * FROM pathology_parameter WHERE id = ?', [result.insertId])
               }}];
   }
+  catch (error) {
+    if(dynamicConnection){
+      await dynamicConnection.close();
+      return error
+    }
+  }
+}
 
   
   async findAll(): Promise<SetupPathologyPathologyParameterService[]> {
-    const unit = await this.connection.query('SELECT * FROM pathology_parameter');
+    const unit = await this.connection.query(`select pathology_parameter.id,pathology_parameter.parameter_name,pathology_parameter.reference_range,unit.unit_name,pathology_parameter.description from pathology_parameter
+    left join unit on pathology_parameter.unit = unit.id`);
     return unit ;
   }
 
   
   async findOne(id: string): Promise<SetupPathologyPathologyParameterService | null> {
-    const unit = await this.connection.query('SELECT * FROM pathology_parameter WHERE id = ?', [id]);
+    const unit = await this.connection.query(`select pathology_parameter.id,pathology_parameter.parameter_name,pathology_parameter.reference_range,unit.unit_name,pathology_parameter.description from pathology_parameter
+    left join unit on pathology_parameter.unit = unit.id WHERE pathology_parameter.id = ?`, [id]);
     
     if (unit.length === 1) {
       return unit ;
@@ -75,6 +86,7 @@ export class SetupPathologyPathologyParameterService {
 
 
   async update(id: string, pathology_parameterEntity: SetupPathologyPathologyParameter): Promise<{ [key: string]: any }[]> {
+    let dynamicConnection;
 
     try {
       // console.log("hhhhhhhh",MedicineCategoryEntity.medicine_category);
@@ -101,7 +113,7 @@ export class SetupPathologyPathologyParameterService {
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-  const dynamicConnection = await createConnection(dynamicConnectionOptions);
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
 
   const repo = await dynamicConnection.query(
     'update pathology_parameter SET parameter_name = ?,reference_range =?,unit =? ,description =? Where hospital_pathology_parameter_id =? and Hospital_id = ?',

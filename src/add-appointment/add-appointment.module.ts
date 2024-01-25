@@ -6,7 +6,7 @@ import { DynamicDatabaseService } from 'src/dynamic_db.service';
 import { AddAppointment } from './entities/add-appointment.entity';
 
 @Module({
-  // imports:[ TypeOrmModule.forFeature([AddAppointment])],
+  imports:[ TypeOrmModule.forFeature([AddAppointment])],
 
   controllers: [AddAppointmentController],
   providers: [AddAppointmentService,DynamicDatabaseService],

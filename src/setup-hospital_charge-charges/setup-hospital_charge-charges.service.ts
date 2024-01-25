@@ -1,18 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
-import { Connection } from 'typeorm';
+import { Connection, createConnection } from 'typeorm';
 import { SetupHospitalChargeCharge } from './entities/setup-hospital_charge-charge.entity';
+import { DynamicDatabaseService } from 'src/dynamic_db.service';
+import { MysqlConnectionOptions } from 'typeorm/driver/mysql/MysqlConnectionOptions';
 
 @Injectable()
 export class SetupHospitalChargeChargesService {
 
-  constructor(@InjectConnection() private connection: Connection) {}
+  constructor(@InjectConnection() private connection: Connection,
+  @Inject(forwardRef(() => DynamicDatabaseService)) private dynamicDbService: DynamicDatabaseService
+
+  ) {}
   
   async create(chargesEntity: SetupHospitalChargeCharge ): Promise<{ [key: string]: any }[]> {
+   let dynamicConnection
+   try{
+
     console.log("aaaaaaaaaa", chargesEntity.name);
 
     const result = await this.connection.query(
-      'INSERT INTO charges (charge_category_id,tax_category_id,charge_unit_id,name,standard_charge,date,description,status,created_at) VALUES (?,?,?,?,?,?,?,?,?)',
+      'INSERT INTO charges (charge_category_id,tax_category_id,charge_unit_id,name,standard_charge,date,description,status) VALUES (?,?,?,?,?,?,?,?)',
       [chargesEntity.charge_category_id,
         chargesEntity.tax_category_id,
         chargesEntity.charge_unit_id,
@@ -20,17 +28,48 @@ export class SetupHospitalChargeChargesService {
         chargesEntity.standard_charge,
         chargesEntity.date,
         chargesEntity.description,
-        chargesEntity.status,
-        chargesEntity.created_at
+        chargesEntity.status
        
       ]
     );
+
+    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+    process.env.ADMIN_IP,
+    process.env.ADMIN_DB_NAME,
+    process.env.ADMIN_DB_PASSWORD,
+    process.env.ADMIN_DB_USER_NAME
+    )
+    
+  const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
+ 
+  const AdminCategory = await dynamicConnection.query(`insert into charges (charge_category_id,tax_category_id,charge_unit_id,name,standard_charge,date,description,status,Hospital_id,hospital_charges_id) values (?,?,?,?,?,?,?,?,?,?)`,[
+    chargesEntity.charge_category_id,
+    chargesEntity.tax_category_id,
+    chargesEntity.charge_unit_id,
+    chargesEntity.name,
+    chargesEntity.standard_charge,
+    chargesEntity.date,
+    chargesEntity.description,
+    chargesEntity.status,
+    chargesEntity.Hospital_id,
+    result.insertId
+  ])
+  console.log("entering if",AdminCategory);
+  await dynamicConnection.close();
 
     return  [{"data ":{"id  ":result.insertId,
               "status":"success",
               "messege":"charges details added successfully inserted",
               "inserted_data": await this.connection.query('SELECT * FROM charges WHERE id = ?', [result.insertId])
               }}];
+  } catch (error) {
+    if(dynamicConnection){
+      await dynamicConnection.close();
+      return error
+    }
+    }
   }
 
 
@@ -55,7 +94,7 @@ export class SetupHospitalChargeChargesService {
 
 
   async update(id: string,chargesEntity: SetupHospitalChargeCharge): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       
       
@@ -74,9 +113,37 @@ export class SetupHospitalChargeChargesService {
       );
   console.log("kkkkkkkk");
   
+  const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+    process.env.ADMIN_IP,
+    process.env.ADMIN_DB_NAME,
+    process.env.ADMIN_DB_PASSWORD,
+    process.env.ADMIN_DB_USER_NAME
+    )
+    
+  const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
+
+  const repo = await dynamicConnection.query(
+    'update charges SET charge_category_id =?,tax_category_id =? ,charge_unit_id =? ,name =? ,standard_charge =? ,date =? ,description =? ,status =? where hospital_charges_id =? and Hospital_id =? ',
+    [
+      chargesEntity.charge_category_id,
+      chargesEntity.tax_category_id,
+      chargesEntity.charge_unit_id,
+      chargesEntity.name,
+      chargesEntity.standard_charge,
+      chargesEntity.date,
+      chargesEntity.description,
+      chargesEntity.status,
+      id,
+      chargesEntity.Hospital_id
+    ]
+  )
+
+  console.log("11111")
       return  [{"data ":{
       status:"success",
-      "messege":"medicine_category details updated successfully inserted",
+      "messege":"charges details updated successfully inserted",
       "updated_values":await this.connection.query('SELECT * FROM charges WHERE id = ?', [id])
       }}];
     } catch (error) {

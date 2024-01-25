@@ -11,6 +11,8 @@ export class SetupRadiologyRadiologyCategoryService {
   ){} 
   
   async create(radiology_categoryEntity: SetupRadiologyRadiologyCategory ): Promise<{ [key: string]: any }[]> {
+   let dynamicConnection;
+   try{
     const result = await this.connection.query(
       'INSERT INTO lab (lab_name) VALUES (?)',
       [radiology_categoryEntity.lab_name
@@ -27,7 +29,7 @@ export class SetupRadiologyRadiologyCategoryService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-    const dynamicConnection = await createConnection(dynamicConnectionOptions);
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query(`INSERT INTO lab (lab_name,Hospital_id,hospital_lab_id) VALUES (?,?,?)`,[
       radiology_categoryEntity.lab_name,
@@ -45,6 +47,12 @@ export class SetupRadiologyRadiologyCategoryService {
               "messege":"lab details added successfully ",
               "inserted_data": await this.connection.query('SELECT * FROM lab WHERE id = ?', [result.insertId])
               }}];
+  } catch (error){
+    if(dynamicConnection){
+      await dynamicConnection.close();
+        return error;
+      }
+    }
   }
 
 
@@ -68,7 +76,7 @@ export class SetupRadiologyRadiologyCategoryService {
   
 
   async update(id: string, radiology_categoryEntity: SetupRadiologyRadiologyCategory ): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       
       
@@ -90,7 +98,7 @@ export class SetupRadiologyRadiologyCategoryService {
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-  const dynamicConnection = await createConnection(dynamicConnectionOptions);
+   dynamicConnection = await createConnection(dynamicConnectionOptions);
 
 const repo =  await dynamicConnection.query(
   'update lab SET lab_name = ? where hospital_lab_id = ? and Hospital_id= ?',

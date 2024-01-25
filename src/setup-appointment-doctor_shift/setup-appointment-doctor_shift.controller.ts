@@ -5,10 +5,10 @@ import { SetupAppointmentDoctorShift } from './entities/setup-appointment-doctor
 export class SetupAppointmentDoctorShiftController {
   constructor(private readonly setupAppointmentDoctorShiftService: SetupAppointmentDoctorShiftService) {}
 
-  // @Post()
-  // create(@Body() doctor_shiftEntity: SetupAppointmentDoctorShift) {
-  //   return this.setupAppointmentDoctorShiftService.create(doctor_shiftEntity);
-  // }
+  @Post()
+  create(@Body() doctor_shiftEntity: SetupAppointmentDoctorShift) {
+    return this.setupAppointmentDoctorShiftService.create(doctor_shiftEntity);
+  }
 
   @Get()
   findAll() {

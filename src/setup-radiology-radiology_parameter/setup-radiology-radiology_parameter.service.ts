@@ -12,6 +12,9 @@ export class SetupRadiologyRadiologyParameterService {
 
 
   async create(radiology_parameterEntity: SetupRadiologyRadiologyParameter ): Promise<{ [key: string]: any }[]> {
+  let dynamicConnection;
+  try{
+
     const result = await this.connection.query(
       'INSERT INTO radiology_parameter (parameter_name,test_value,reference_range,gender,unit,description) VALUES (?,?,?,?,?,?)',
       [radiology_parameterEntity.parameter_name,
@@ -33,7 +36,7 @@ export class SetupRadiologyRadiologyParameterService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-    const dynamicConnection = await createConnection(dynamicConnectionOptions);
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query(`INSERT INTO radiology_parameter
      (parameter_name,test_value,reference_range,gender,unit,description,Hospital_id,hospital_radiology_parameter_id) VALUES (?,?,?,?,?,?,?,?)`,[
@@ -57,19 +60,26 @@ export class SetupRadiologyRadiologyParameterService {
               "messege":"radiology_parameter details added successfully inserted",
               "inserted_data": await this.connection.query('SELECT * FROM radiology_parameter WHERE id = ?', [result.insertId])
               }}];
+  } catch (error) {
+    if(dynamicConnection){
+      await dynamicConnection.close();
+    }
+    }
   }
 
 
 
 
   async findAll(): Promise<SetupRadiologyRadiologyParameter[]> {
-    const radiology_parameter = await this.connection.query('SELECT * FROM radiology_parameter');
+    const radiology_parameter = await this.connection.query(`select radiology_parameter.id,radiology_parameter.parameter_name,radiology_parameter.reference_range,unit.unit_name,radiology_parameter.description from radiology_parameter
+    left join unit on radiology_parameter.unit = unit.id ;`);
     return radiology_parameter ;
   }
 
   
   async findOne(id: string): Promise<SetupRadiologyRadiologyParameter | null> {
-    const radiology_parameter = await this.connection.query('SELECT * FROM radiology_parameter WHERE id = ?', [id]);
+    const radiology_parameter = await this.connection.query(`select radiology_parameter.id,radiology_parameter.parameter_name,radiology_parameter.reference_range,unit.unit_name,radiology_parameter.description from radiology_parameter
+    left join unit on radiology_parameter.unit = unit.id WHERE radiology_parameter.id = ? `, [id]);
     
     if (radiology_parameter.length === 1) {
       return radiology_parameter  ;
@@ -80,7 +90,7 @@ export class SetupRadiologyRadiologyParameterService {
 
 
   async update(id: string, radiology_parameterEntity: SetupRadiologyRadiologyParameter): Promise<{ [key: string]: any }[]> {
-
+let dynamicConnection;
     try {
       
       

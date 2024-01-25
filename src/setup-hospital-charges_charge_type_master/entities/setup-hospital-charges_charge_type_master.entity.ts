@@ -4,4 +4,6 @@ export class SetupHospitalChargesChargeTypeMaster {
     is_default:string;
     is_active:string;
     created_at:Date;
+    hospital_charge_type_master_id:number;
+    Hospital_id:number;
 }
