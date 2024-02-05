@@ -235,9 +235,10 @@ let adminStaffId = adminStaff.id
           global_shift_id,
           shift_id,
           live_consult,
-          amount
+          amount,
+          message
           
-          ) values(?,?,?,?,?,?,?,?,?,?,?)`,[
+          ) values(?,?,?,?,?,?,?,?,?,?,?,?)`,[
             AppointmentEntity.patient_id,
             HOScaseRef.insertId,
             HOSvisitInsert.insertId,
@@ -248,7 +249,8 @@ let adminStaffId = adminStaff.id
             AppointmentEntity.global_shift_id,
             AppointmentEntity.shift_id,
             AppointmentEntity.live_consult,
-            HOSamount[0].amount
+            HOSamount[0].amount,
+            AppointmentEntity.message
           ]
       )
 
@@ -306,6 +308,7 @@ let adminStaffId = adminStaff.id
    
       ]
   )
+  console.log("ssss",Patient_charges.insertId)
    try{
 
   const transactions = await dynamicConnection.query(`
@@ -374,8 +377,9 @@ let adminStaffId = adminStaff.id
         shift_id,
         live_consult,
         Hospital_id,hos_appointment_id,
-        amount
-        ) values(?,?,?,?,?,?,?,?,?,?,?,?,?)`,[
+        amount,
+        message
+        ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,[
           HOSpatientId,
           caseRef.insertId,
           visitInsert.insertId,
@@ -383,12 +387,13 @@ let adminStaffId = adminStaff.id
           AppointmentEntity.time,
           adminStaffId,
           'Online',
-          AppointmentEntity.global_shift_id,
-          AppointmentEntity.shift_id,
+          adminGlobalShiftId.id,
+          adminShiftId.id,
           AppointmentEntity.live_consult,
           AppointmentEntity.Hospital_id,
           hos_appointment_id,
-          HOSamount[0].amount
+          HOSamount[0].amount,
+          AppointmentEntity.message
         ]
     )
 
@@ -455,17 +460,172 @@ async findOne(id: string): Promise<AddAppointment | null> {
 
 
 
+async update(id:number,AppointmentEntity: AddAppointment){
+  let dynamicConnection;
 
+  try{
 
+  //  const hoscredentials = await this.connection.query(`select ip,db_name,db_password,username 
+  //  from hospital_credentials where hospital_id = ?`,[AppointmentEntity.Hospital_id])
+  
 
+  const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
 
-async remove(id: string): Promise<{ [key: string]: any }[]> {
-  const result = await this.connection.query('DELETE FROM appointment WHERE id = ?', [id]);
-  return [{
-    "status":"success",
-    "message":" id: "+ id+" deleted successfully"
+    process.env.ADMIN_IP,
+    process.env.ADMIN_DB_NAME,
+    process.env.ADMIN_DB_PASSWORD,
+    process.env.ADMIN_DB_USER_NAME
+    )
+  const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+
+  dynamicConnection = await createConnection(dynamicConnectionOptions);
+  const [getAppntDetails] = await dynamicConnection.query(`select id,visit_details_id from appointment  where Hospital_id = ? and hos_appointment_id = ?`,[AppointmentEntity.Hospital_id,id])
+  console.log(getAppntDetails,"=====");
+
+const adminApptId = getAppntDetails.id
+  console.log("hosAppt_id",adminApptId);
+  
+  const AdminVisitDetailsId = getAppntDetails.visit_details_id
+  console.log("AdminVisitDetailsId",AdminVisitDetailsId);
+  
+  const [getVisitDetailsId] = await this.connection.query(`select visit_details_id from appointment where id = ?`,[id])
+  console.log("getVisitDetailsId",getVisitDetailsId.visit_details_id);
+    const hosVisitDetailsId = getVisitDetailsId.visit_details_id
+    console.log("hosVisitDetailsId",hosVisitDetailsId);
+    
+   const hosVisitUpdate = await this.connection.query(`update visit_details set
+   appointment_date = ?,
+   live_consult = ?
+   where id = ?`,[
+    AppointmentEntity.date+" "+AppointmentEntity.time,
+    AppointmentEntity.live_consult,
+    hosVisitDetailsId
+   ])
+
+   console.log("rrrreeeerrrreeeeyeyeiruey");
+   
+
+const hosApptUpdate = await this.connection.query(`update appointment set
+date = ?,
+time = ?,
+global_shift_id = ?,
+shift_id = ?,
+live_consult = ?,
+message = ? where id = ?`,[
+AppointmentEntity.date,
+AppointmentEntity.time,
+AppointmentEntity.global_shift_id,
+AppointmentEntity.shift_id,
+AppointmentEntity.live_consult,
+AppointmentEntity.message,
+id
+]
+)
+
+  const adminVisitDetailsUpdate = await dynamicConnection.query(`update visit_details set
+  appointment_date = ?,
+  live_consult = ?
+  where id = ?`,[
+   AppointmentEntity.date+" "+AppointmentEntity.time,
+   AppointmentEntity.live_consult,
+   AdminVisitDetailsId
+  ])
+
+  const [adminGlobalShiftId] = await dynamicConnection.query(`select id from global_shift where Hospital_id = ? and 
+  hospital_global_shift_id = ?`,[
+    AppointmentEntity.Hospital_id,
+    AppointmentEntity.global_shift_id
+  ])
+  console.log(adminGlobalShiftId,"HosGlobalShiftId");
+   
+  const [adminShiftId] = await dynamicConnection.query(`select id from doctor_shift where Hospital_id = ? and 
+  hospital_doctor_shift_id = ?`,[
+    AppointmentEntity.Hospital_id,
+    AppointmentEntity.shift_id
+  ])
+  
+console.log(adminGlobalShiftId,adminShiftId,"11221122");
+
+  try {
+    const adminApptUpdate = await dynamicConnection.query(`update appointment set
+date = ?,
+time = ?,
+global_shift_id = ?,
+shift_id = ?,
+live_consult = ?,
+message = ?
+where id = ?`,[
+  AppointmentEntity.date,
+  AppointmentEntity.time,
+  adminGlobalShiftId.id,
+  adminShiftId.id,
+  AppointmentEntity.live_consult,
+  AppointmentEntity.message,
+  adminApptId
+]
+)
+console.log("ssssss");
+  } catch (error) {
+    console.log(error);
+    
   }
-  ];
+
+
+await dynamicConnection.close();
+
+  return  [{
+    "status":"success",
+    "messege":"Appointment updated successfully",
+    "updated_details":await this.connection.query('select * from appointment where id = ?',[id])
+  }];
+
+} catch (error) {
+  if (dynamicConnection) {
+    await dynamicConnection.close();
+  }
+  return "error is : "+error
+}
+}
+
+
+
+
+
+
+
+async remove(id: string,hos_id:number): Promise<{ [key: string]: any }[]> {
+  let dynamicConnection;
+  try {
+    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+      process.env.ADMIN_IP,
+      process.env.ADMIN_DB_NAME,
+      process.env.ADMIN_DB_PASSWORD,
+      process.env.ADMIN_DB_USER_NAME
+      )
+    const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+  
+    dynamicConnection = await createConnection(dynamicConnectionOptions);
+  
+     const delAdminAppt = await dynamicConnection.query(`update appointment set is_deleted = 1 where Hospital_id = ?
+      and hos_appointment_id = ?`,[hos_id,id])
+    const result = await this.connection.query('DELETE FROM appointment WHERE id = ?', [id]);
+    if (dynamicConnection) {
+      await dynamicConnection.close();  
+    }
+    return [{
+      "status":"success",
+      "message":" id: "+ id+" deleted successfully"
+    }
+    ];
+  } catch (error) {
+    if (dynamicConnection) {
+      await dynamicConnection.close();
+    }
+    return error
+  }
+  
+ 
 }
 
 }

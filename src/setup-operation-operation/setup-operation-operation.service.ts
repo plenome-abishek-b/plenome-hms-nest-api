@@ -38,6 +38,13 @@ export class SetupOperationOperationService {
    
 console.log("hiii bro");
 
+const [operation_category] = await dynamicConnection.query(`select id from operation_category where Hospital_id = ? and hospital_operation_category_id = ?`, [
+  operationEntity.Hospital_id,
+  operationEntity.category_id
+])
+
+const opcatid = operation_category.id
+console.log("dddddddd",operation_category);
   const AdminCategory = await dynamicConnection.query(`Insert into operation 
   ( 
     operation,
@@ -46,7 +53,7 @@ console.log("hiii bro");
     hospital_operation_id,
     Hospital_id) values (?,?,?,?,?)`,[
     operationEntity.operation,
-    operationEntity.category_id,
+    opcatid,
     operationEntity.is_active,
     result.insertId,
     operationEntity.Hospital_id
@@ -54,6 +61,8 @@ console.log("hiii bro");
   ])
   console.log("entering if",AdminCategory);
   await dynamicConnection.close();
+  console.log("sss");
+  
    
     return  [{"data ":{"id  ":result.insertId,
               "status":"success",

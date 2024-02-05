@@ -3,6 +3,6 @@ export class SetupApptSlotAmount {
     staff_id:number;
     consult_duration:number;
     charge_id:number;
-    // hospital_finding_category_id:number;
-    // Hospital_id:number;
+     hospital_doctor_global_shift_id:number;
+    Hospital_id:number;
 }

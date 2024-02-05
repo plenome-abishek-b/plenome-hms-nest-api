@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { AddAppointmentService } from './add-appointment.service';
 import { AddAppointment } from './entities/add-appointment.entity';
 
@@ -21,13 +21,13 @@ export class AddAppointmentController {
     return this.addAppointmentService.findOne(id);
   }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() add_appointment:AddAppointment) {
-  //   return this.addAppointmentService.update(id, add_appointment);
-  // }
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() add_appointment:AddAppointment) {
+    return this.addAppointmentService.update(+id, add_appointment);
+  }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.addAppointmentService.remove(id);
+  remove(@Param('id') id: string,@Query('hos_id') hos_id: number) {
+    return this.addAppointmentService.remove(id,hos_id);
   }
 }

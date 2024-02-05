@@ -25,13 +25,13 @@ export class SetupHospitalChargesChargeTypeModuleController {
     return this.setupHospitalChargesChargeTypeModuleService.findone(dakalti);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() charge_type_moduleEntity: SetupHospitalChargesChargeTypeModule ) {
-    return this.setupHospitalChargesChargeTypeModuleService.update(id,charge_type_moduleEntity );
-  }
+  // @Patch(':id')
+  // update(@Param('id') id: string, @Body() charge_type_moduleEntity: SetupHospitalChargesChargeTypeModule ) {
+  //   return this.setupHospitalChargesChargeTypeModuleService.update(id,charge_type_moduleEntity );
+  // }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.setupHospitalChargesChargeTypeModuleService.remove(id);
-  }
+  // @Delete(':id')
+  // remove(@Param('id') id: string) {
+  //   return this.setupHospitalChargesChargeTypeModuleService.remove(id);
+  // }
 }

@@ -14,13 +14,10 @@ export class OpdOutPatientService {
   async create ( opd_entity:OpdOutPatient) {
     let dynamicConnection;
     try{
-
       const HOSpatient = await this.connection.query('select * from patients where id =?',[opd_entity.patient_id] )
-  
-      
+        
       let HOspatientmobileno = HOSpatient[0].mobileno
-  
-  
+    
     let  HOSTrimmedmobileno = HOspatientmobileno.startsWith('91') ? HOspatientmobileno.slice(2):HOspatientmobileno;
 
     const [HOSstaff] = await this.connection.query('select * from staff where id = ?',[opd_entity.cons_doctor])
@@ -100,7 +97,11 @@ if(patientInHos[0]){
   
 }
 
-
+const [staffEmailInHOS] = await this.connection.query(`select email from staff where id = ?`,[opd_entity.cons_doctor])
+console.log("staffEmailAdmin",staffEmailInHOS.email);
+ 
+const [adminStaff] = await dynamicConnection.query(`select id from staff where email = ?`,[staffEmailInHOS.email])
+let adminStaffId = adminStaff.id
 
 
 var HOStransaction_id:number
@@ -111,15 +112,44 @@ insert into opd_details (case_reference_id,patient_id) values (?,?)`,[
   opd_entity.patient_id
 ])
 
+const HOSopdccreate = HOSopdCreate.insertId;
 
 
-
-const [HOSamount] = await this.connection.query(`
-select round((charges.standard_charge+(charges.standard_charge*((tax_category.percentage)/100))),2) amount from
+const HOSamount = await this.connection.query(`
+select charges.standard_charge,tax_category.percentage tax_percentage, round((charges.standard_charge+
+  (charges.standard_charge*((tax_category.percentage)/100))),2) amount from
 charges join tax_category on charges.tax_category_id = tax_category.id
-where charges.id = ?`,[opd_entity.patient_charge_id])
+where charges.id = ?`,[opd_entity.charge_id])
 
-console.log(HOSamount);
+let HOspatient_charges_id;
+
+  
+const HOSPatient_charges = await this.connection.query(
+  `insert into patient_charges(
+    date,
+    opd_id,
+    qty,
+    charge_id,
+    standard_charge, 
+    tax,
+    apply_charge,
+    amount
+    ) values(?,?,?,?,?,?,?,?)`,[
+      opd_entity.date,
+      HOSopdccreate,
+      1,
+      opd_entity.charge_id,
+      HOSamount[0].standard_charge,      
+      HOSamount[0].tax_percentage,
+      opd_entity.apply_charge,
+      HOSamount[0].amount 
+    ]
+)
+console.log("10001100011000110100101001010010");
+
+ HOspatient_charges_id = HOSPatient_charges.insertId
+
+console.log(HOspatient_charges_id,"ssss");
 
 
 const HOStransactions = await this.connection.query(`
@@ -149,27 +179,50 @@ insert into transactions (
   console.log(HOStransaction_id,"idddddddddddddd");
   console.log(HOStransaction_id,"ccccccccc");
 
+  
 
   const HOSvisitInsert = await this.connection.query(`
   insert into visit_details(
     opd_details_id,
+    organisation_id,
     patient_charge_id,
     transaction_id,
     case_type,
     cons_doctor,
     appointment_date,
     live_consult,
-    payment_mode
-    ) values (?,?,?,?,?,?,?,?)`
+    payment_mode,
+    symptoms_type,
+    symptoms,
+    bp,
+    height,
+    weight,
+    pulse,
+    temperature,
+    respiration,
+    known_allergies,
+    note
+    ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ,[
       HOSopdCreate.insertId,
-      opd_entity.patient_charge_id,
+      opd_entity.organisation_id,
+      HOspatient_charges_id,
       HOStransaction_id,
       "",
       opd_entity.cons_doctor,
       opd_entity.date+" "+opd_entity.time,
       opd_entity.live_consult,
-      opd_entity.payment_mode
+      opd_entity.payment_mode,
+      opd_entity.symptoms_type,
+      opd_entity.symptoms,
+      opd_entity.bp,
+      opd_entity.height,
+      opd_entity.weight,
+      opd_entity.pulse,
+      opd_entity.temperature,
+      opd_entity.respiration,
+      opd_entity.known_allergies,
+      opd_entity.note
     ])
     console.log(HOSvisitInsert,"]][[]][[");
     
@@ -183,7 +236,7 @@ insert into transactions (
 
 
 // ##################################################################################################################################################################
-
+ var transaction_id:number;
   const caseRef = await dynamicConnection.query('INSERT INTO case_references values(default,default)')
   const opdCreate = await dynamicConnection.query(`
   insert into opd_details (case_reference_id,patient_id,Hospital_id,hos_opd_id) values (?,?,?,?)`,[
@@ -199,20 +252,44 @@ insert into transactions (
 
  
 
-const [charges] = await dynamicConnection.query(`select * from charges where Hospital_id = ? and hospital_charges_id = ?`,
+const [getAdminChargeId] = await dynamicConnection.query(`select id  from charges 
+where Hospital_id = ? and hospital_charges_id = ?`,
 [opd_entity.Hospital_id,
-  opd_entity.patient_charge_id
+  opd_entity.charge_id
 ])
 console.log("Hospital ID:", opd_entity.Hospital_id);
-console.log("Patient Charge ID:", opd_entity.patient_charge_id);
-console.log(charges,"xxxxxxxx");
+console.log("Patient Charge ID:", opd_entity.charge_id);
+console.log(getAdminChargeId,"xxxxxxxxssss");
 
- 
+const Patient_charges = await dynamicConnection.query(
+  `insert into patient_charges(
+    date,
+    opd_id,
+    qty,
+    charge_id,
+    standard_charge, 
+    tax,
+    apply_charge,
+    amount
+    ) values(?,?,?,?,?,?,?,?)`,[
+      opd_entity.date,
+      insertOPDID,
+      1,
+      getAdminChargeId.id,
+      HOSamount[0].standard_charge,      
+        HOSamount[0].tax_percentage,
+        opd_entity.apply_charge,
+        HOSamount[0].amount 
+    ]
+)
 
+const adminpatient_charges_id = Patient_charges.insertId
 
-  
+console.log(adminpatient_charges_id,"ssss");
+
+  try{
    
-let adminTransacction_id;
+let adminTransaction_id;
   const transactions = await dynamicConnection.query(`
   insert into transactions (
   type,
@@ -237,14 +314,26 @@ let adminTransacction_id;
     opd_entity.Hospital_id,
     HOStransactions.insertId
   ])
-  adminTransacction_id = transactions.insertId
-  console.log(adminTransacction_id,"11221121122112");
-   
+  adminTransaction_id = transactions.insertId
+  console.log(adminTransaction_id,"11221121122112");
+} catch (error) {
+  return "error in admin transaction insert"
+}
  
+
+const [organisation_id] = await dynamicConnection.query(`select id from organisation 
+where Hospital_id = ? and hos_organisation_id = ?`,
+[
+  opd_entity.Hospital_id,
+  opd_entity.organisation_id
+]
+)
+console.log("sssss",organisation_id)
 
   const visitInsert = await dynamicConnection.query(`
   insert into visit_details(
     opd_details_id,
+    organisation_id,
     patient_charge_id,
     transaction_id,
     case_type,
@@ -252,19 +341,40 @@ let adminTransacction_id;
     appointment_date,
     live_consult,
     payment_mode,
+    symptoms_type,
+    symptoms,
+    bp,
+    height,
+    weight,
+    pulse,
+    temperature,
+    respiration,
+    known_allergies,
+    note,
     Hospital_id,
     hos_visit_id
-  ) values (?,?,?,?,?,?,?,?,?,?)`,
+  ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 
   [
     opdCreate.insertId,
-    charges.id,
-    adminTransacction_id,
+    organisation_id.id,
+    adminpatient_charges_id,
+    transaction_id,
     "",
-    opd_entity.cons_doctor,
+    adminStaffId,
     opd_entity.date+" "+opd_entity.time,
     opd_entity.live_consult,
     opd_entity.payment_mode,
+    opd_entity.symptoms_type,
+    opd_entity.symptoms,
+    opd_entity.bp,
+    opd_entity.height,
+    opd_entity.weight,
+    opd_entity.pulse,
+    opd_entity.temperature,
+    opd_entity.respiration,
+    opd_entity.known_allergies,
+    opd_entity.note,
     opd_entity.Hospital_id,
     HOSvisitInsert.insertId
   ]
@@ -294,11 +404,10 @@ catch (error) {
 
 async findAll() {
 
-  const opd_details = await this.connection.query(`SELECT distinct
+  const opd_details = await this.connection.query(`SELECT distinct patients.id,
   patients.patient_name,
-  patients.id,
   patients.guardian_name,
-  patients.mobileno,
+  patients.mobileno,patients.gender,
   (SELECT COUNT(*) FROM opd_details WHERE patients.id = opd_details.patient_id) AS totalrecheckup,
   (SELECT  visit_details.appointment_date 
    FROM visit_details 
@@ -324,7 +433,7 @@ async findOne(search: string) {
   patients.patient_name,
   patients.id,
   patients.guardian_name,
-  patients.mobileno,
+  patients.mobileno,patients.gender,
   (SELECT COUNT(*) FROM opd_details WHERE patients.id = opd_details.patient_id) AS totalrecheckup,
   (SELECT  visit_details.appointment_date 
    FROM visit_details 
@@ -358,15 +467,6 @@ console.log(values,"qqqq");
     return opd_details 
  
   }
-
-
-
-
-    
-
-
-
-
 
 
   catch (error) {

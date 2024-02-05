@@ -16,10 +16,7 @@ export class SetupApptSlotTimimgsController {
     return this.setupApptSlotTimimgsService.finforDocAndShift(day,staff_id,shift_id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.setupApptSlotTimimgsService.findOne(+id);
-  }
+
 
   @Patch(':id')
   update(@Param('id') id: string, @Body()  timingEntity: SetupApptSlotTimimg) {

@@ -1,40 +1,119 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { SetupApptSlotAmount } from './entities/setup_appt_slot_amount.entity';
 import { InjectConnection } from '@nestjs/typeorm';
-import { Connection } from 'typeorm';
+import { Connection, createConnection } from 'typeorm';
+import { MysqlConnectionOptions } from 'typeorm/driver/mysql/MysqlConnectionOptions';
+import { DynamicDatabaseService } from 'src/dynamic_db.service';
 
 @Injectable()
 export class SetupApptSlotAmountService {
 
-  constructor(@InjectConnection() private connection: Connection) {}
+  constructor(@InjectConnection() private connection: Connection,
+  @Inject(forwardRef(() => DynamicDatabaseService)) private dynamicDbService: DynamicDatabaseService
+
+  ) {}
 
 async  create(slotEntity: SetupApptSlotAmount) {
-const [check] = await this.connection.query('select staff_id from shift_details where staff_id = ?',[slotEntity.staff_id])
-console.log(check);
-  console.log("entering if",check);
 
-  if(check){
-    console.log("entering if",check);
+  let dynamicConnection;
+  try{
+    console.log("aaa");
     
-return "already irukku update pannanum"
+    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+      process.env.ADMIN_IP,
+      process.env.ADMIN_DB_NAME,
+      process.env.ADMIN_DB_PASSWORD,
+      process.env.ADMIN_DB_USER_NAME
+      )
+      
+    const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+    const dynamicConnection = await createConnection(dynamicConnectionOptions)
+    console.log("aaa");
+
+const [check] = await this.connection.query('select id from shift_details where staff_id = ?',[slotEntity.staff_id])
+
+const [getStaffMail] = await this.connection.query(`select email from staff where id = ?`,[slotEntity.staff_id])
+console.log("aaa",getStaffMail);
+
+const [getAdminStaff] = await dynamicConnection.query(`select id from staff where email = ?`,[getStaffMail.email])
+
+
+
+const [getAdminChargeId] = await dynamicConnection.query(`select id from charges 
+where Hospital_id = ? and hospital_charges_id = ? `,[
+  slotEntity.Hospital_id,
+  slotEntity.charge_id
+]) 
+
+  if(check){  
+
+    const update = this.connection.query(`
+    update shift_details set 
+    consult_duration = ? ,charge_id = ?
+     where id = ? `,[
+      slotEntity.consult_duration,
+      slotEntity.charge_id,
+      check.id,
+     ])
+     const [getAdminShift] = await dynamicConnection.query(`select id from shift_details
+     where Hospital_id = ? and hospital_shift_details_id = ?`,[slotEntity.Hospital_id,check.id])
+
+     const AdminUpdate = dynamicConnection.query(` 
+     update shift_details set 
+     consult_duration = ? ,charge_id = ?
+      where id = ? `,[
+        getAdminShift.id
+      ])
+    return  [{"data ":{
+    "status":"success",
+    "messege":"shift_details details updated successfully",
+    }}]
   }
 else{
-  console.log("entering else",check);
+ 
+  console.log("111");
 
   const insert = await this.connection.query(`insert into shift_details(staff_id,
     consult_duration,
-    charge_id) values (?,?,?)`,[
+    charge_id
+    ) values (?,?,?)`,[
       slotEntity.staff_id,
       slotEntity.consult_duration,
       slotEntity.charge_id
     ])
-  // return "inserted id is : "+insert.insertId;
+console.log("111", getAdminStaff.id,
+slotEntity.consult_duration,
+getAdminChargeId.id,
+slotEntity.Hospital_id,
+insert.insertId);
+
+  const AdminCategory = await dynamicConnection.query(`insert into shift_details(staff_id,
+    consult_duration,
+    charge_id,Hospital_id,hospital_shift_details_id) values (?,?,?,?,?)`,[
+      getAdminStaff.id,
+      slotEntity.consult_duration,
+      getAdminChargeId.id,
+      slotEntity.Hospital_id,
+      insert.insertId
+    ])
+
+  
   return [{"data ":{"id  ":insert.insertId,
   "status":"success",
   "messege":"shift_details details added successfully inserted",
   "inserted_data": await this.connection.query('SELECT * FROM shift_details WHERE id = ?', [insert.insertId])
   }}];
 }
+
+}catch(error){
+  if(dynamicConnection){
+    await dynamicConnection.close();
+    return error
+  }}
+  if(dynamicConnection){
+    await dynamicConnection.close();
+  }
 }
 
   

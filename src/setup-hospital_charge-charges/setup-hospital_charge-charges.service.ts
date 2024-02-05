@@ -19,20 +19,22 @@ export class SetupHospitalChargeChargesService {
 
     console.log("aaaaaaaaaa", chargesEntity.name);
 
-    const result = await this.connection.query(
-      'INSERT INTO charges (charge_category_id,tax_category_id,charge_unit_id,name,standard_charge,date,description,status) VALUES (?,?,?,?,?,?,?,?)',
-      [chargesEntity.charge_category_id,
-        chargesEntity.tax_category_id,
-        chargesEntity.charge_unit_id,
-        chargesEntity.name,
-        chargesEntity.standard_charge,
-        chargesEntity.date,
-        chargesEntity.description,
-        chargesEntity.status
-       
-      ]
-    );
 
+  const result = await this.connection.query(
+    'INSERT INTO charges (charge_category_id,tax_category_id,charge_unit_id,name,standard_charge,date,description,status) VALUES (?,?,?,?,?,?,?,?)',
+    [chargesEntity.charge_category_id,
+      chargesEntity.tax_category_id,
+      chargesEntity.charge_unit_id,
+      chargesEntity.name,
+      chargesEntity.standard_charge,
+      chargesEntity.date,
+      chargesEntity.description,
+      chargesEntity.status
+     
+    ]
+  );  
+  
+      
     const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
 
     process.env.ADMIN_IP,
@@ -43,12 +45,33 @@ export class SetupHospitalChargeChargesService {
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
    dynamicConnection = await createConnection(dynamicConnectionOptions);
- 
-  const AdminCategory = await dynamicConnection.query(`insert into charges (charge_category_id,tax_category_id,charge_unit_id,name,standard_charge,date,description,status,Hospital_id,hospital_charges_id) values (?,?,?,?,?,?,?,?,?,?)`,[
-    chargesEntity.charge_category_id,
-    chargesEntity.tax_category_id,
-    chargesEntity.charge_unit_id,
-    chargesEntity.name,
+   console.log("ddddddwewee")
+   const [charges1] = await dynamicConnection.query(`select id from charge_categories where Hospital_id = ? and hospital_charge_categories_id = ?`,
+   [chargesEntity.Hospital_id,
+   chargesEntity.charge_category_id
+   ])
+
+   const [charges2] = await dynamicConnection.query('select id from tax_category where Hospital_id = ? and hospital_tax_category_id = ?',
+   [
+    chargesEntity.Hospital_id,
+    chargesEntity.tax_category_id
+   ])
+
+   const [charges3] = await dynamicConnection.query(`select id from charge_units where Hospital_id = ? and hospital_charge_units_id = ?`,
+   [
+    chargesEntity.Hospital_id,
+    chargesEntity.charge_unit_id
+   ])
+
+   console.log("aaaaawewee",charges1,charges2,charges3)
+try {
+  const AdminCategory = await dynamicConnection.query(`insert into charges (charge_category_id,tax_category_id,charge_unit_id,name,
+    standard_charge,date,description,status,Hospital_id,hospital_charges_id)
+   values (?,?,?,?,?,?,?,?,?,?)`,[
+    charges1.id,
+    charges2.id,
+    charges3.id,
+        chargesEntity.name,
     chargesEntity.standard_charge,
     chargesEntity.date,
     chargesEntity.description,
@@ -56,13 +79,21 @@ export class SetupHospitalChargeChargesService {
     chargesEntity.Hospital_id,
     result.insertId
   ])
+  console.log("wewee")
   console.log("entering if",AdminCategory);
+
+} catch (error) {
+  console.log(error);
+  
+}
+
+
   await dynamicConnection.close();
 
     return  [{"data ":{"id  ":result.insertId,
               "status":"success",
               "messege":"charges details added successfully inserted",
-              "inserted_data": await this.connection.query('SELECT * FROM charges WHERE id = ?', [result.insertId])
+              // "inserted_data": await this.connection.query('SELECT * FROM charges WHERE id = ?', [result.insertId])
               }}];
   } catch (error) {
     if(dynamicConnection){

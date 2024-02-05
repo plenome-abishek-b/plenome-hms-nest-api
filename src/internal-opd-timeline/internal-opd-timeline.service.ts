@@ -14,7 +14,7 @@ export class InternalOpdTimelineService {
  async create(opd_timeline:InternalOpdTimeline) {
   let dynamicConnection
   try{
-    const result = await this.connection.query('insert into patient_timeline (patient_id,title,timeline_date,description,document,status,date,generated_users_type,generated_users_id) values (?,?,?,?,?,?,?,?,?)',
+    const result = await this.connection.query('insert into patient_timeline (patient_id,title,timeline_date,description,document,status,date,generated_users_type) values (?,?,?,?,?,?,?,?)',
     [
       opd_timeline.patient_id,
       opd_timeline.title,
@@ -24,7 +24,6 @@ export class InternalOpdTimelineService {
       opd_timeline.status,
       opd_timeline.date,
       opd_timeline.generated_users_type,
-      opd_timeline.generated_users_id
     ]);
   
   const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
@@ -39,7 +38,7 @@ export class InternalOpdTimelineService {
    dynamicConnection = await createConnection(dynamicConnectionOptions);
  
 
-   const AdminCategory = await dynamicConnection.query(`insert into patient_timeline (patient_id,title,timeline_date,description,document,status,date,generated_users_type,generated_users_id,hospital_id,hospital_patient_timeline_id) values (?,?,?,?,?,?,?,?,?,?,?)`,[
+   const AdminCategory = await dynamicConnection.query(`insert into patient_timeline (patient_id,title,timeline_date,description,document,status,date,generated_users_type,hospital_id,hospital_patient_timeline_id) values (?,?,?,?,?,?,?,?,?,?)`,[
     opd_timeline.patient_id,
     opd_timeline.title,
     opd_timeline.timeline_date,
@@ -48,7 +47,6 @@ export class InternalOpdTimelineService {
     opd_timeline.status,
     opd_timeline.date,
     opd_timeline.generated_users_type,
-    opd_timeline.generated_users_id,
     opd_timeline.hospital_id,
     result.insertId
    ])

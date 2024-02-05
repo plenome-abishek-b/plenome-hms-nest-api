@@ -23,6 +23,7 @@ export class SetupBloodBankProductsService {
       ]
     );
 
+    console.log("qqqq");
     
     const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
 
@@ -35,6 +36,8 @@ export class SetupBloodBankProductsService {
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
     const dynamicConnection = await createConnection(dynamicConnectionOptions);
    
+
+    
     const AdminCategory = await dynamicConnection.query('INSERT INTO blood_bank_products (name,is_blood_group,Hospital_id,hospital_blood_bank_products_id) values (?,?,?,?)',[
       bloodproductsEntity.name,
       bloodproductsEntity.is_blood_group,

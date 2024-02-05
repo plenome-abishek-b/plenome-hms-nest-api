@@ -5,4 +5,5 @@ export class SetupApptSlotTimimg {
     global_shift_id:number;
     start_time:string;
     end_time:string;
+    hospital_id:number
     }
