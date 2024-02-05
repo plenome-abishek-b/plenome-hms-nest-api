@@ -14,8 +14,6 @@ export class SetupHumanResourceLeaveTypesService {
   ){} 
   
   async create(leavetypesEntity: SetupHumanResourceLeaveType ): Promise<{ [key: string]: any }[]> {
-   let dynamicConnection
-   try {
     const result = await this.connection.query(
       'INSERT INTO leave_types (type,is_active) VALUES (?,?)',
       [leavetypesEntity.type,
@@ -34,7 +32,7 @@ export class SetupHumanResourceLeaveTypesService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-     dynamicConnection = await createConnection(dynamicConnectionOptions);
+    const dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query(`INSERT into leave_types (type,is_active,Hospital_id,hospital_leave_types_id) values (?,?,?,?)`,[
 leavetypesEntity.type,
@@ -50,12 +48,6 @@ result.insertId
               "messege":"leave_types details added successfully ",
               "inserted_data": await this.connection.query('SELECT * FROM leave_types WHERE id = ?', [result.insertId])
               }}];
-  } catch (error) {
-    if(dynamicConnection){
-      await dynamicConnection.close()
-      return error
-    }
-    }
   }
 
 
@@ -79,7 +71,7 @@ result.insertId
 
 
   async update(id: string, leavetypesEntity: SetupHumanResourceLeaveType): Promise<{ [key: string]: any }[]> {
-let dynamicConnection;
+
     try {
       
       
@@ -101,7 +93,7 @@ let dynamicConnection;
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-   dynamicConnection = await createConnection(dynamicConnectionOptions);
+  const dynamicConnection = await createConnection(dynamicConnectionOptions);
 
   const repo = await dynamicConnection.query(
     'update leave_types SET type =? where hospital_leave_types_id =? and Hospital_id= ?',
