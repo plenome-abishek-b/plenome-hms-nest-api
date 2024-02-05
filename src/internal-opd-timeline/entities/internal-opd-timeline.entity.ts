@@ -8,7 +8,6 @@ export class InternalOpdTimeline {
     status:string;
     date:Date;
     generated_users_type:string;
-    generated_users_id:number;
     created_at:Date;
     hospital_patient_timeline_id:number;
     hospital_id:number;

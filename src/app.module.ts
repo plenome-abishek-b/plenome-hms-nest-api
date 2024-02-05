@@ -81,6 +81,7 @@ import { SettingsCaptchaSettingsModule } from './settings-captcha_settings/setti
 import { SettingsFrontCmsSettingModule } from './settings-front_cms_setting/settings-front_cms_setting.module';
 import { AddAppointmentDoctorWiseModule } from './add-appointment-doctor_wise/add-appointment-doctor_wise.module';
 import { AddAppointmentPatientQueueModule } from './add-appointment-patient_queue/add-appointment-patient_queue.module';
+import { TpaManagementModule } from './tpa_management/tpa_management.module';
 
 
 
@@ -231,6 +232,7 @@ import { AddAppointmentPatientQueueModule } from './add-appointment-patient_queu
     SettingsFrontCmsSettingModule,
     AddAppointmentDoctorWiseModule,
     AddAppointmentPatientQueueModule,
+    TpaManagementModule,
   ],
   controllers: [AppController],
   providers: [AppService],

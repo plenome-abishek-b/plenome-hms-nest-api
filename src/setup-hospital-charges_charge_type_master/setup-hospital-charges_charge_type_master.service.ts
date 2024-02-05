@@ -14,7 +14,8 @@ export class SetupHospitalChargesChargeTypeMasterService {
   async create(charge_type_masterEntity: SetupHospitalChargesChargeTypeMaster ): Promise<{ [key: string]: any }[]> {
     let dynamicConnection
     try{
-    
+      console.log("aaa");
+
     const result = await this.connection.query(
       'INSERT INTO charge_type_master (charge_type,is_default,is_active) VALUES (?,?,?)',
       [charge_type_masterEntity.charge_type,
@@ -23,7 +24,8 @@ export class SetupHospitalChargesChargeTypeMasterService {
        
       ]
     );
-    
+    console.log("aaa");
+
     const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
 
       process.env.ADMIN_IP,
@@ -32,11 +34,13 @@ export class SetupHospitalChargesChargeTypeMasterService {
       process.env.ADMIN_DB_USER_NAME
       )
 
-     
+      console.log("aaa");
+
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
      dynamicConnection = await createConnection(dynamicConnectionOptions);
    
-    const AdminCategory = await dynamicConnection.query(`INSERT INTO charge_type_master (charge_type,is_default,is_active,Hospital_id,hospital_charge_type_master_id) VALUES (?,?,?,?,?)`,[
+    const AdminCategory = await dynamicConnection.query(`INSERT INTO charge_type_master (charge_type,is_default,is_active,
+      Hospital_id,hospital_charge_type_master_id) VALUES (?,?,?,?,?)`,[
       charge_type_masterEntity.charge_type,
       charge_type_masterEntity.is_default,
       charge_type_masterEntity.is_active,

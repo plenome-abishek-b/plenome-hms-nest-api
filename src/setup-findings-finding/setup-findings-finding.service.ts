@@ -36,11 +36,16 @@ export class SetupFindingsFindingService {
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
      dynamicConnection = await createConnection(dynamicConnectionOptions);
    
+const [finding_category] = await dynamicConnection.query(`select id from finding_category where Hospital_id = ? and hospital_finding_category_id = ?`,[
+  findingEntity.Hospital_id,
+  findingEntity.finding_category_id
+])
+
     const AdminCategory = await dynamicConnection.query('insert into finding (name,description,finding_category_id,Hospital_id,hospital_finding_id) values (?,?,?,?,?)',[
       findingEntity.name,
       findingEntity.description,
-      findingEntity.finding_category_id,
-      findingEntity.Hospital_id,
+      finding_category.id,
+            findingEntity.Hospital_id,
       result.insertId
     ])
     console.log("entering if",AdminCategory);

@@ -17,6 +17,8 @@ export class SetupPharmacyMedicineDosageService {
   async create(Medicine_dosageEntity: SetupPharmacyMedicineDosage ): Promise<{ [key: string]: any }[]> {
    let dynamicConnection;
    try {
+ console.log("ssssssss")
+
     const result = await this.connection.query(
       'INSERT INTO medicine_dosage (medicine_category_id,dosage,charge_units_id) VALUES (?,?,?)',
       [Medicine_dosageEntity.medicine_category_id,
@@ -37,20 +39,38 @@ export class SetupPharmacyMedicineDosageService {
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
      dynamicConnection = await createConnection(dynamicConnectionOptions);
    
-    const AdminCategory = await dynamicConnection.query('INSERT INTO medicine_dosage (medicine_category_id,dosage,charge_units_id,hospital_id,hospital_medicine_dosage_id) values(?,?,?,?,?)',[
-      Medicine_dosageEntity.medicine_category_id,
+const [medicine_category] = await dynamicConnection.query(`select id from medicine_category where Hospital_id = ? and hospital_medicine_category_id = ?`,
+[
+  Medicine_dosageEntity.Hospital_id,
+  Medicine_dosageEntity.medicine_category_id
+])
+
+const [charge_units] = await dynamicConnection.query(`select id from charge_units where Hospital_id = ? and hospital_charge_units_id = ?`,
+[
+  Medicine_dosageEntity.Hospital_id,
+  Medicine_dosageEntity.charge_units_id
+])
+console.log("ddddddd",medicine_category,charge_units);
+try{
+    const AdminCategory = await dynamicConnection.query('INSERT INTO medicine_dosage (medicine_category_id,dosage,charge_units_id,Hospital_id,hospital_medicine_dosage_id) values(?,?,?,?,?)',[
+      medicine_category.id,
       Medicine_dosageEntity.dosage,
-      Medicine_dosageEntity.charge_units_id,
-      Medicine_dosageEntity.Hospital_id,
+      charge_units.id,
+            Medicine_dosageEntity.Hospital_id,
       result.insertId
     ])
     console.log("entering if",AdminCategory);
+
+
               await dynamicConnection.close();
     return  [{"data ":{"id  ":result.insertId,
               "status":"success",
               "messege":"medicine_dosage details added successfully ",
               "inserted_data": await this.connection.query('SELECT * FROM medicine_dosage WHERE id = ?', [result.insertId])
               }}];
+            }catch (error){
+              return error
+            }
   } catch (error) {
     if(dynamicConnection){
       await dynamicConnection.close()

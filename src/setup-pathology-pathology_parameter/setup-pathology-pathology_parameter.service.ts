@@ -24,6 +24,7 @@ export class SetupPathologyPathologyParameterService {
        
       ]
     );
+console.log("sssss");
 
 
     const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
@@ -37,13 +38,18 @@ export class SetupPathologyPathologyParameterService {
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
      dynamicConnection = await createConnection(dynamicConnectionOptions);
    
+const [patho_unit] = await dynamicConnection.query(`select id from unit where Hospital_id = ? and hospital_unit_id = ?`,
+[pathology_parameterEntity.Hospital_id,
+pathology_parameterEntity.unit]
+)
+
     const AdminCategory = await dynamicConnection.query('Insert into pathology_parameter (parameter_name,test_value,reference_range,gender,unit,description,Hospital_id,hospital_pathology_parameter_id) VALUES (?,?,?,?,?,?,?,?)',[
       pathology_parameterEntity.parameter_name,
       pathology_parameterEntity.test_value,
       pathology_parameterEntity.reference_range,
       pathology_parameterEntity.gender,
-      pathology_parameterEntity.unit,
-      pathology_parameterEntity.description,
+      patho_unit.id,
+            pathology_parameterEntity.description,
       pathology_parameterEntity.Hospital_id,
       result.insertId
     ])

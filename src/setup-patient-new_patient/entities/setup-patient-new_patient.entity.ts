@@ -31,5 +31,6 @@ export class SetupPatientNewPatient {
     state_code:string;
     district_code:string;
     emergency_mobile_no:number;
-    hospital_finding_category_id:number;
-    Hospital_id:number;}
+    Hospital_id:number;
+    hospital_blood_bank_products_id:number;
+}

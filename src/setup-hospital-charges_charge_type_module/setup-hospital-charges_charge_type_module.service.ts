@@ -16,6 +16,32 @@ export class SetupHospitalChargesChargeTypeModuleService {
   async create(charge_type_moduleEntity: SetupHospitalChargesChargeTypeModule ): Promise<{ [key: string]: any }[]> {
    let dynamicConnection
    try{
+    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+      process.env.ADMIN_IP,
+      process.env.ADMIN_DB_NAME,
+      process.env.ADMIN_DB_PASSWORD,
+      process.env.ADMIN_DB_USER_NAME
+      )
+      const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+      dynamicConnection = await createConnection(dynamicConnectionOptions);
+ 
+const [check] = await this.connection.query(`select id from charge_type_module where charge_type_master_id = ? and module_shortcode =?`,[
+  charge_type_moduleEntity.charge_type_master_id, charge_type_moduleEntity.module_shortcode
+])
+if(check ){
+const [getadmin] = await dynamicConnection.query(`select id from charge_type_module where Hospital_id =? and hospital_charge_type_module_id = ?`,[
+  charge_type_moduleEntity.Hospital_id,check.id
+])
+
+const deladmin = await dynamicConnection.query(`delete from charge_type_module where id = ?`,[getadmin.id])
+const del = await this.connection.query(`delete from charge_type_module where id = ?`,[check.id])
+return [{"data":{
+  "status":"success",
+  "message":"charge_type_module details deleted successfully",
+}}]
+
+}else{
     const result = await this.connection.query(
       'INSERT INTO charge_type_module (charge_type_master_id,module_shortcode) VALUES (?,?)',
       [charge_type_moduleEntity.charge_type_master_id,
@@ -24,19 +50,16 @@ export class SetupHospitalChargesChargeTypeModuleService {
       ]
     );
 
-    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
-
-      process.env.ADMIN_IP,
-      process.env.ADMIN_DB_NAME,
-      process.env.ADMIN_DB_PASSWORD,
-      process.env.ADMIN_DB_USER_NAME
-      )
-      
-    const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-    const dynamicConnection = await createConnection(dynamicConnectionOptions);
-   
-    const AdminCategory = await dynamicConnection.query('INSERT INTO charge_type_module (charge_type_master_id,module_shortcode,Hospital_id,hospital_charge_type_module_id) VALUES (?,?,?,?)',[
+    const [getAdminMaster] = await dynamicConnection.query(`select id from charge_type_master where
+     hospital_charge_type_master_id = ? and
+     Hospital_id = ?
+    `,[
       charge_type_moduleEntity.charge_type_master_id,
+      charge_type_moduleEntity.Hospital_id
+    ])
+    
+    const AdminCategory = await dynamicConnection.query('INSERT INTO charge_type_module (charge_type_master_id,module_shortcode,Hospital_id,hospital_charge_type_module_id) VALUES (?,?,?,?)',[
+      getAdminMaster.id,
       charge_type_moduleEntity.module_shortcode,
       charge_type_moduleEntity.Hospital_id,
       result.insertId
@@ -49,6 +72,8 @@ export class SetupHospitalChargesChargeTypeModuleService {
               "messege":"charge_type_module details added successfully ",
               "inserted_data": await this.connection.query('SELECT * FROM charge_type_module WHERE id = ?', [result.insertId])
               }}];
+            }
+
   } catch(error) {
     if(dynamicConnection){
       await dynamicConnection.close();
@@ -99,7 +124,6 @@ GROUP BY charge_type_master.id;
         return acc;
       }, {});
     };
-    console.log(charge_type_modules[82].modules,"shhhh");
    
    
     // Transform the result to return an array of objects
@@ -138,68 +162,7 @@ GROUP BY charge_type_master.id;
 
 
 
-  async update(id: string, charge_type_moduleEntity: SetupHospitalChargesChargeTypeModule ): Promise<{ [key: string]: any }[]> {
-let dynamicConnection;
-    try {
-      console.log(id,charge_type_moduleEntity,"updating data");
-      
-      
-      
-      const result = await this.connection.query(
-        'UPDATE charge_type_module SET charge_type_master_id =?,  module_shortcode =?  WHERE id = ?',
-        [charge_type_moduleEntity.charge_type_master_id,
-          charge_type_moduleEntity.module_shortcode,
-         id
-        ]
-      );
-  console.log("kkkkkkkk");
-  console.log(result,"res");
 
-  const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
-
-    process.env.ADMIN_IP,
-    process.env.ADMIN_DB_NAME,
-    process.env.ADMIN_DB_PASSWORD,
-    process.env.ADMIN_DB_USER_NAME
-    )
-    
-  const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-   dynamicConnection = await createConnection(dynamicConnectionOptions);
-
-  const repo = await dynamicConnection.query(
-    'update charge_type_module SET charge_type_master_id =?,  module_shortcode =? where hospital_charge_type_module_id = ? and Hospital_id = ?',
-    [
-      charge_type_moduleEntity.charge_type_master_id,
-      charge_type_moduleEntity.module_shortcode,
-      id,
-      charge_type_moduleEntity.hospital_charge_type_module_id
-    ]
-  )
-  
-  
-      return  [{"data ":{
-      status:"success",
-      "messege":"charge_type_module details updated successfully inserted",
-      "updated_values":await this.connection.query('SELECT * FROM charge_type_module WHERE id = ?', [id])
-      }}];
-    } catch (error) {
-      console.log(error,"ee");
       
-      return [
-        {status:"failed",
-         "messege":"cannot update charge_type_module profile",
-         "error":error
-      }
-      ]
-    }
-  }
 
-  async remove(id: string): Promise<{ [key: string]: any }[]> {
-    const result = await this.connection.query('DELETE FROM charge_type_module WHERE id = ?', [id]);
-    return [{
-      "status":"success",
-      "message":" id: "+ id+" deleted successfully"
-    }
-    ];
-  }
 }

@@ -34,9 +34,21 @@ export class SetupReferralReferralCommissionService {
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
      dynamicConnection = await createConnection(dynamicConnectionOptions);
    
+const [referral_category] = await dynamicConnection.query(`select id from referral_category where Hospital_id = ? and hospital_referral_category_id = ?`,[
+  referral_commissionEntity.Hospital_id,
+  referral_commissionEntity.referral_category_id
+])
+
+const [referral_type] = await dynamicConnection.query(`select id from referral_type where Hospital_id = ? and hospital_referral_type_id = ?`,[
+  referral_commissionEntity.Hospital_id,
+  referral_commissionEntity.referral_type_id
+])
+
+console.log("sssss",referral_category,referral_type)
+
     const AdminCategory = await dynamicConnection.query(`INSERT INTO referral_commission (referral_category_id,referral_type_id,commission,is_active,Hospital_id,hospital_referral_commission_id) VALUES (?,?,?,?,?,?)`,[
-      referral_commissionEntity.referral_category_id,
-      referral_commissionEntity.referral_type_id,
+      referral_category.id,
+      referral_type.id,
       referral_commissionEntity.commission,
       referral_commissionEntity.is_active,
       referral_commissionEntity.Hospital_id,

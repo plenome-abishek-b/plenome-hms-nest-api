@@ -2,8 +2,6 @@ export class OpdOutPatient {
     id:number;
     opd_details_id:number;
     organisation_id:number;
-    patient_charge_id:number;
-    transaction_id:number;
     cons_doctor:number;
     case_type:string;
     appointment_date:Date;
@@ -28,8 +26,16 @@ export class OpdOutPatient {
     can_delete:string;
     payment_date:Date;
     time:string;
+    qty:number;
+    opd_id:number;
+    charge_id:number;
+    standard_charge:number;
+    tax:string;
+    apply_charge:string;
+    amount:string;
+    tpa_charge:number;
     created_at:Date;
     patient_id:number;
     Hospital_id:number;
-
+    
 }

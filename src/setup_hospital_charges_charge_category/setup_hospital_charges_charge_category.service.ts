@@ -18,18 +18,25 @@ export class SetupHospitalChargesChargeCategoryService {
 
   async create(charge_categoryEntity: SetupHospitalChargesChargeCategory): Promise<{[key: string]: any}[]>{
  let dynamicConnection;
- try{
  
-    const result = await this.connection.query(
-  'INSERT INTO charge_categories (charge_type_id,name,description,short_code,is_default) VALUES (?,?,?,?,?)',
- [charge_categoryEntity.charge_type_id,
-  charge_categoryEntity.name,
-  charge_categoryEntity.description,
-  charge_categoryEntity.short_code,
-  charge_categoryEntity.is_default
+ try{
+  
 
-]
-  );
+ const  result = await this.connection.query(
+    'INSERT INTO charge_categories (charge_type_id,name,description,is_default) VALUES (?,?,?,?)',
+   [charge_categoryEntity.charge_type_id,
+    charge_categoryEntity.name,
+    charge_categoryEntity.description,
+    charge_categoryEntity.is_default
+  ]
+    );
+    const charge_cate = result.insertId
+    console.log(charge_cate,"!!!!!!!!!")
+
+ 
+
+ ;
+
 
   const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
 
@@ -42,8 +49,18 @@ export class SetupHospitalChargesChargeCategoryService {
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
    dynamicConnection = await createConnection(dynamicConnectionOptions);
  
+   console.log("sssss");
+   
+const [charge_category] = await dynamicConnection.query(`select id from charge_type_master where Hospital_id = ?
+and hospital_charge_type_master_id = ?`, [
+  charge_categoryEntity.Hospital_id,
+  charge_categoryEntity.charge_type_id
+])
+console.log("charge_category",charge_category);
+
+
   const AdminCategory = await dynamicConnection.query(`INSERT INTO charge_categories (charge_type_id,name,description,short_code,is_default,Hospital_id,hospital_charge_categories_id) values (?,?,?,?,?,?,?)`,[
-    charge_categoryEntity.charge_type_id,
+charge_category.id,
     charge_categoryEntity.name,
     charge_categoryEntity.description,
     charge_categoryEntity.short_code,

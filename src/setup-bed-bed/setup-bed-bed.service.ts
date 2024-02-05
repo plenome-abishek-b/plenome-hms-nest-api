@@ -36,10 +36,22 @@ export class SetupBedBedService {
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
      dynamicConnection = await createConnection(dynamicConnectionOptions);
    
+     console.log("dddd");
+
+const [bed_type] = await dynamicConnection.query(`select id from bed_type where Hospital_id = ? and hospital_bed_type_id = ?`,[
+  bedEntity.Hospital_id,
+  bedEntity.bed_type_id
+])
+
+const [bed_group] = await dynamicConnection.query(`select id from bed_group where Hospital_id =? and hospital_bed_group_id = ?`,[
+  bedEntity.Hospital_id,
+  bedEntity.bed_group_id
+])
+
     const AdminCategory = await dynamicConnection.query('INSERT INTO bed (name,bed_type_id,bed_group_id,is_active,Hospital_id,hospital_bed_id) values (?,?,?,?,?,?) ',[
       bedEntity.name,
-      bedEntity.bed_type_id,
-      bedEntity.bed_group_id,
+      bed_type.id,
+      bed_group.id,
       bedEntity.is_active,
       bedEntity.Hospital_id,
       result.insertId

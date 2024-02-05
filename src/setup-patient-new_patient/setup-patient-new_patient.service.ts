@@ -11,13 +11,21 @@ export class SetupPatientNewPatientService {
   @Inject(forwardRef(() => DynamicDatabaseService)) private dynamicDbService: DynamicDatabaseService
   ){} 
 
-  async create(new_patientEntity: SetupPatientNewPatient ): Promise<{ [key: string]: any }[]> {
- 
+  async create(new_patientEntity: SetupPatientNewPatient ) {
+ let dynamicConnection
+
+
+
+ try{
+console.log("ggggg");
+console.log("dddd");
+
     const result = await this.connection.query(
-      `INSERT INTO patients ( patient_name, dob, image,  mobileno, email, gender, marital_status,blood_bank_product_id,
+      `INSERT INTO patients ( lang_id,patient_name, dob, image,  mobileno, email, gender, marital_status,blood_bank_product_id,
          address,guardian_name,ABHA_number, known_allergies, note,insurance_id, insurance_validity
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?); `,
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
       [
+        new_patientEntity.lang_id,
         new_patientEntity.patient_name,
         new_patientEntity.dob,
         new_patientEntity.image,
@@ -32,20 +40,76 @@ export class SetupPatientNewPatientService {
         new_patientEntity.known_allergies,
         new_patientEntity.note,
         new_patientEntity.insurance_id,
-        new_patientEntity.insurance_validity       
+        new_patientEntity.insurance_validity      
       ]
     );
 
+    console.log("ssss",result);
+
+    const free = result.insertId;
+    console.log("saassd")
+    
+
+    const dynamicDbConfig = this.dynamicDbService.createDynamicDatabaseConfig(
+
+      process.env.ADMIN_IP,
+      process.env.ADMIN_DB_NAME,
+      process.env.ADMIN_DB_PASSWORD,
+      process.env.ADMIN_DB_USER_NAME
+      )
+      
+    const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
+     dynamicConnection = await createConnection(dynamicConnectionOptions);
   
+console.log("eeeeeeeee")
+
+const [blood_bank] = await dynamicConnection.query(`select id from blood_bank_products where Hospital_id = ? and hospital_blood_bank_products_id = ?`,
+[
+  new_patientEntity.Hospital_id,
+  new_patientEntity.blood_bank_product_id
+])
+   console.log("sssss",blood_bank)
 
    
-    return  [{"data ":{"id  ":result.insertId,
+    const Adminpatient = await dynamicConnection.query(`insert into  patients ( lang_id,patient_name, dob, image,  mobileno, email, gender, marital_status,blood_bank_product_id,
+      address,guardian_name,ABHA_number, known_allergies, note,insurance_id, insurance_validity,Hospital_id,hospital_blood_bank_products_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)`,[
+        new_patientEntity.lang_id,
+        new_patientEntity.patient_name,
+        new_patientEntity.dob,
+        new_patientEntity.image,
+        new_patientEntity.mobileno,
+        new_patientEntity.email,
+        new_patientEntity.gender,
+        new_patientEntity.marital_status,
+        blood_bank.id,
+        new_patientEntity.address,
+        new_patientEntity.guardian_name,
+        new_patientEntity.ABHA_number,
+        new_patientEntity.known_allergies,
+        new_patientEntity.note,
+        new_patientEntity.insurance_id,
+        new_patientEntity.insurance_validity,
+        new_patientEntity.Hospital_id,
+        free
+      ])
+
+      console.log("dddd")
+   
+
+    return  [{"data ":{"id  ":free,
               "status":"success",
               "messege":"patients details added successfully ",
-              "inserted_data": await this.connection.query('SELECT * FROM patients WHERE id = ?', [result.insertId])
+              "inserted_data": await this.connection.query('SELECT * FROM patients WHERE id = ?', [free])
               }}];
+  }catch(error )
+{
+  if(dynamicConnection){
+    await dynamicConnection.close();
+    return error
   }
-
+}
+}
 
 
 

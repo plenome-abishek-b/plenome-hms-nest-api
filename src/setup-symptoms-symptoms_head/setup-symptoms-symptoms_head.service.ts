@@ -62,13 +62,15 @@ return error
 
 
   async findAll(): Promise<SetupSymptomsSymptomsHead[]> {
-    const symptoms = await this.connection.query('SELECT * FROM symptoms');
+    const symptoms = await this.connection.query(`select symptoms.id,symptoms.symptoms_title as symptoms_head,symptoms.description,symptoms_classification.symptoms_type from symptoms
+    left join symptoms_classification on symptoms.type = symptoms_classification.id`);
     return symptoms ;
   }
 
   
   async findOne(id: string): Promise<SetupSymptomsSymptomsHead | null> {
-    const symptoms = await this.connection.query('SELECT * FROM symptoms WHERE id = ?', [id]);
+    const symptoms = await this.connection.query(`select symptoms.id,symptoms.symptoms_title as symptoms_head,symptoms.description,symptoms_classification.symptoms_type from symptoms
+    left join symptoms_classification on symptoms.type = symptoms_classification.id WHERE id = ?`, [id]);
     
     if (symptoms.length === 1) {
       return symptoms ;
