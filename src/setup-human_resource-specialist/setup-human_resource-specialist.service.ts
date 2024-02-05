@@ -13,8 +13,6 @@ export class SetupHumanResourceSpecialistService {
   ){} 
   
   async create(specialsitEntity: SetupHumanResourceSpecialist ) {
-    let dynamicConnection
-    try{
     const result = await this.connection.query(
       'INSERT INTO specialist (specialist_name,is_active) VALUES (?,?)',
       [specialsitEntity.specialist_name,
@@ -32,7 +30,7 @@ export class SetupHumanResourceSpecialistService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-     dynamicConnection = await createConnection(dynamicConnectionOptions);
+    const dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query(`INSERT INTO specialist (specialist_name,is_active,Hospital_id,hospital_specialist_id) VALUES (?,?,?,?)`,[
       specialsitEntity.specialist_name,
@@ -49,12 +47,6 @@ export class SetupHumanResourceSpecialistService {
               "messege":"specialist details added successfully ",
               "inserted_data": await this.connection.query('SELECT * FROM specialist WHERE id = ?', [result.insertId])
               }}];
-  } catch (error) {
-    if(dynamicConnection){
-      await dynamicConnection.close();
-      return error
-    }
-    }
   }
 
 
@@ -78,7 +70,7 @@ export class SetupHumanResourceSpecialistService {
 
 
   async update(id: string, specialsitEntity: SetupHumanResourceSpecialist ): Promise<{ [key: string]: any }[]> {
-let dynamicConnection;
+
     try {
       
       
@@ -100,7 +92,7 @@ let dynamicConnection;
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-   dynamicConnection = await createConnection(dynamicConnectionOptions);
+  const dynamicConnection = await createConnection(dynamicConnectionOptions);
 
   const repo = await dynamicConnection.query(
     'update specialist SET specialist_name =? where hospital_specialist_id = ? and Hospital_id =?',

@@ -14,8 +14,6 @@ export class SetupHumanResourceDesignationService {
   ){} 
   
   async create(designationEntity:SetupHumanResourceDesignation ): Promise<{ [key: string]: any }[]> {
-  let dynamicConnection
-  try{
     const result = await this.connection.query(
       'INSERT INTO staff_designation (designation,is_active) VALUES (?,?)',
       [designationEntity.designation,
@@ -32,7 +30,7 @@ export class SetupHumanResourceDesignationService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-     dynamicConnection = await createConnection(dynamicConnectionOptions);
+    const dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query('INSERT INTO staff_designation(designation,is_active,Hospital_id,hospital_staff_designation_id) values (?,?,?,?)',[
       designationEntity.designation,
@@ -48,12 +46,6 @@ export class SetupHumanResourceDesignationService {
               "messege":"staff_designation details added successfully inserted",
               "inserted_data": await this.connection.query('SELECT * FROM staff_designation WHERE id = ?', [result.insertId])
               }}];
-  } catch (error) {
-    if(dynamicConnection){
-      await dynamicConnection.close();
-      return error;
-    }
-    }
   }
 
 
@@ -77,7 +69,7 @@ export class SetupHumanResourceDesignationService {
 
 
   async update(id: string, designationEntity: SetupHumanResourceDesignation): Promise<{ [key: string]: any }[]> {
-let dynamicConnection;
+
     try {
       
       
@@ -99,7 +91,7 @@ let dynamicConnection;
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-   dynamicConnection = await createConnection(dynamicConnectionOptions);
+  const dynamicConnection = await createConnection(dynamicConnectionOptions);
 
 const repo =  await dynamicConnection.query(
   `update staff_designation SET designation = ? WHERE hospital_staff_designation_id = ? and Hospital_id = ?`,

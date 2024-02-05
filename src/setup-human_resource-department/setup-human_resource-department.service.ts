@@ -13,9 +13,6 @@ export class SetupHumanResourceDepartmentService {
   ){} 
   
   async create(departmentEntity: SetupHumanResourceDepartment ): Promise<{ [key: string]: any }[]> {
-    let dynamicConnection;
-    try{
-    
     const result = await this.connection.query(
       'INSERT INTO department (department_name,is_active) VALUES (?,?)',
       [departmentEntity.department_name,
@@ -33,7 +30,7 @@ export class SetupHumanResourceDepartmentService {
       )
       
     const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-     dynamicConnection = await createConnection(dynamicConnectionOptions);
+    const dynamicConnection = await createConnection(dynamicConnectionOptions);
    
     const AdminCategory = await dynamicConnection.query('INSERT INTO department (department_name,is_active,Hospital_id,hospital_department_id) values (?,?,?,?)',[
       departmentEntity.department_name,
@@ -50,12 +47,6 @@ export class SetupHumanResourceDepartmentService {
               "messege":"department details added successfully inserted",
               "inserted_data": await this.connection.query('SELECT * FROM department WHERE id = ?', [result.insertId])
               }}];
-  } catch (error) {
-    if(dynamicConnection) {
-      await dynamicConnection.close();
-      return error
-    }
-    }
   }
 
 
@@ -79,7 +70,7 @@ export class SetupHumanResourceDepartmentService {
 
 
   async update(id: string, departmentEntity: SetupHumanResourceDepartment): Promise<{ [key: string]: any }[]> {
-let dynamicConnection;
+
     try {
       
       
@@ -101,7 +92,7 @@ let dynamicConnection;
     )
     
   const dynamicConnectionOptions: MysqlConnectionOptions = dynamicDbConfig as MysqlConnectionOptions;
-   dynamicConnection = await createConnection(dynamicConnectionOptions);
+  const dynamicConnection = await createConnection(dynamicConnectionOptions);
 
 const repo =  await dynamicConnection.query(
   'update department SET department_name = ? where hospital_department_id = ? and Hospital_id= ?',
